@@ -1,0 +1,27 @@
+{
+  "backup": {
+    "destino_padrao": {
+      "windows": "E:/VSCode-bkp",
+      "linux": "/mnt/e/VSCode-bkp",
+      "darwin": "/Volumes/VSCode-bkp"
+    },
+    "fallback_por_so": {
+      "windows": "D:/VSCode-bkp",
+      "linux": "/mnt/d/VSCode-bkp",
+      "darwin": "/Volumes/VSCode-bkp"
+    },
+    "fallback_relativo_repo": "_backups_local",
+    "formato_nome_arquivo": "{commit}_{timestamp}{extensao}"
+  },
+  "sessao": {
+    "historico_relativo_repo": "docs/06_progresso/historico",
+    "formato_nome_arquivo": "sessao_{data}.md",
+    "titulo_padrao": "Resumo da Sessao"
+  },
+  "seguranca": {
+    "roots_permitidos_escrita": [
+      "docs",
+      ".github/skills"
+    ]
+  }
+}

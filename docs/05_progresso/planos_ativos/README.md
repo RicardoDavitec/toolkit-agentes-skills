@@ -11,12 +11,18 @@ F4 Homologacao · F5 Aprovacao.
 
 | Plano | Fase atual | Estado |
 |-------|------------|--------|
-| [unificacao_template_kit_glpi-12_10_26-10_40.md](./unificacao_template_kit_glpi-12_10_26-10_40.md) | F1 | Planejado (execucao adiada) |
+| [unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md](./unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md) | F1 | Planejado |
 
 ## Anexos
 
 - [F1_S1_diagnostico-12_10_26.md](./anexos/F1_S1_diagnostico-12_10_26.md)
 - [F1_S2_decisoes_arquitetura-12_10_26.md](./anexos/F1_S2_decisoes_arquitetura-12_10_26.md)
+- [F1_S1_inventario-13_10_26.md](./anexos/F1_S1_inventario-13_10_26.md) (a escrever)
+- [F1_S2_decisoes-13_10_26.md](./anexos/F1_S2_decisoes-13_10_26.md) (a escrever)
+
+## Legados
+
+- [unificacao_template_kit_glpi-12_10_26-10_40.md](../legados/unificacao_template_kit_glpi-12_10_26-10_40.md) — substituido pelo plano vigente (13/10).
 
 ## Marcadores
 

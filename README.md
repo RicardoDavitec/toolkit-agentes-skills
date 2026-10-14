@@ -1,5 +1,8 @@
 # toolkit-agentes-skills
 
+**Versao:** [`v1.0.0`](CHANGELOG.md) (14/10/2026). Fonte unica de inicializacao.
+O `API-VScode-GLPI` permanece como historico.
+
 Kit reutilizavel de **agentes e skills para Cursor**, com integracao **GLPI**
 via API REST (qualquer instancia) e fluxo de documentacao **F/S/P**
 (Fase / Sessao-Sprint / Tarefa ancorada em commit). Unifica o antigo

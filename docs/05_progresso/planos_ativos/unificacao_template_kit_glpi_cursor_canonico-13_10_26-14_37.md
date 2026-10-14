@@ -3,7 +3,7 @@
 > Criado: 13/10/2026 14:37 · Fase principal: `F1` · Produto: `toolkit-agentes-skills`
 > Arquivo: `unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md`
 > Substitui: `unificacao_template_kit_glpi-12_10_26-10_40.md` (movido para legados neste ciclo)
-> Estado: **planejado**
+> Estado: **F5 aceito em 14/10 (`v1.0.0`); F4.S1.P3 aberto**
 
 ## Objetivo
 
@@ -65,7 +65,7 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 | F3.S2 | Bootstrap e upgrade em repositorios descartaveis | [x] |
 | F4.S1 | Piloto no Bot_Pan | [~] |
 | F4.S2 | Demais projetos consumidores | [x] |
-| F5.S1 | Aceite, versao e descontinuacao da fonte antiga | [ ] |
+| F5.S1 | Aceite, versao e descontinuacao da fonte antiga | [A] |
 
 ## Fases e tarefas
 
@@ -165,11 +165,12 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       arquivo por vez. Gate: `rg` de marcadores + lint YAML antes do merge.
       <!-- glpi: code="F2.S1.P2" -->
 
-    - [ ] **F2.S1.P3** CLI e configuracao GLPI sem segredos
+    - [x] **F2.S1.P3** CLI e configuracao GLPI sem segredos (14/10)
       Criterio: `tools/glpi/`, `.glpi/*.example`, presets `generic` e
       `api-vscode-glpi`; arquivos reais (`instance.yaml`, `project.yaml`,
       `maps/states.json`) fora do template; `.gitignore` cobrindo segredos.
-      <!-- glpi: code="F2.S1.P3" -->
+      Entregue no commit `3b82344`; o marcador ficou aberto ate o F5.
+      <!-- glpi: code="F2.S1.P3" plan_start="2026-10-14T06:00:00-03:00" plan_end="2026-10-14T08:00:00-03:00" real_start="2026-10-14T06:47:12-03:00" real_end="2026-10-14T06:47:12-03:00" -->
 
   - [x] **F2.S2** Unificacao de skills em `.cursor/skills` (F/S/P longa) (14/10)
     Catalogo unico: 33 skills + 8 agentes em `.cursor/`; `.github/skills`
@@ -380,22 +381,26 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 
 ### F5 — Aprovacao
 
-- [ ] **F5** Aprovacao
-  <!-- glpi: code="F5" -->
+- [A] **F5** Aprovacao (14/10)
+  Aceite: `v1.0.0`, `CHANGELOG.md` e README da fonte antiga apontando para
+  este template. Termo: `anexos/F5_S1_termo_aceite-14_10_26.md`.
+  <!-- glpi: code="F5" plan_start="2026-10-14T15:00:00-03:00" plan_end="2026-10-14T17:00:00-03:00" real_start="2026-10-14T15:01:00-03:00" real_end="2026-10-14T15:10:00-03:00" accept_ref="docs/05_progresso/planos_ativos/anexos/F5_S1_termo_aceite-14_10_26.md" -->
 
-  - [ ] **F5.S1** Aceite, versao e descontinuacao da fonte antiga
-    <!-- glpi: code="F5.S1" -->
+  - [A] **F5.S1** Aceite, versao e descontinuacao da fonte antiga (14/10)
+    <!-- glpi: code="F5.S1" plan_start="2026-10-14T15:00:00-03:00" plan_end="2026-10-14T17:00:00-03:00" real_start="2026-10-14T15:01:00-03:00" real_end="2026-10-14T15:10:00-03:00" accept_ref="docs/05_progresso/planos_ativos/anexos/F5_S1_termo_aceite-14_10_26.md" -->
 
-    - [ ] **F5.S1.P1** Versao `v1.0.0` e `CHANGELOG.md`
-      <!-- glpi: code="F5.S1.P1" -->
+    - [A] **F5.S1.P1** Versao `v1.0.0` e `CHANGELOG.md` (14/10)
+      `CHANGELOG.md` na raiz e tag anotada `v1.0.0` nesta branch.
+      <!-- glpi: code="F5.S1.P1" plan_start="2026-10-14T15:00:00-03:00" plan_end="2026-10-14T17:00:00-03:00" real_start="2026-10-14T15:01:00-03:00" real_end="2026-10-14T15:10:00-03:00" accept_ref="docs/05_progresso/planos_ativos/anexos/F5_S1_termo_aceite-14_10_26.md" -->
 
-    - [ ] **F5.S1.P2** Descontinuar `API-VScode-GLPI` como fonte
+    - [A] **F5.S1.P2** Descontinuar `API-VScode-GLPI` como fonte (14/10)
       Criterio: README do `API-VScode-GLPI` aponta para o template; nada apagado.
-      <!-- glpi: code="F5.S1.P2" -->
+      Banner no README; o manual abaixo dele foi mantido.
+      <!-- glpi: code="F5.S1.P2" plan_start="2026-10-14T15:00:00-03:00" plan_end="2026-10-14T17:00:00-03:00" real_start="2026-10-14T15:01:00-03:00" real_end="2026-10-14T15:10:00-03:00" accept_ref="docs/05_progresso/planos_ativos/anexos/F5_S1_termo_aceite-14_10_26.md" -->
 
-    - [ ] **F5.S1.P3** Termo de aceite
+    - [A] **F5.S1.P3** Termo de aceite (14/10)
       Criterio: `[x]` → `[A]` com `accept_ref`.
-      <!-- glpi: code="F5.S1.P3" -->
+      <!-- glpi: code="F5.S1.P3" plan_start="2026-10-14T15:00:00-03:00" plan_end="2026-10-14T17:00:00-03:00" real_start="2026-10-14T15:01:00-03:00" real_end="2026-10-14T15:10:00-03:00" accept_ref="docs/05_progresso/planos_ativos/anexos/F5_S1_termo_aceite-14_10_26.md" -->
 
 ## Pendencias
 

@@ -43,5 +43,10 @@ samu-operacional `cc3c20e`, mev_v3 `0be11b2` (livros em
 ## Proximas acoes
 
 - F4.S1.P3: follow-up GLPI, se houver titulo e chamado confirmados.
-- F5: tag `v1.0.0`, CHANGELOG e README do `API-VScode-GLPI` apontando para o template.
-- Enviar os commits dos consumidores se o push desta sessao nao os incluir.
+- Enviar a tag `v1.0.0` e o README do `API-VScode-GLPI` se ainda estiverem so no local.
+
+## Continuacao (15:03)
+
+F5.S1 aceito: `CHANGELOG.md`, tag `v1.0.0` e termo
+`anexos/F5_S1_termo_aceite-14_10_26.md`. O README do `API-VScode-GLPI`
+aponta para este template; o manual de la foi mantido.

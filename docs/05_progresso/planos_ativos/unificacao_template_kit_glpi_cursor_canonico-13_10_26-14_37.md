@@ -120,25 +120,22 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       funciona nativo.
       <!-- glpi: code="F1.S2.P1" -->
 
-    - [ ] **F1.S2.P2** Arvore de documentacao unificada
-      Criterio: decidir entre `05_progresso` + `06_progresso/historico`
-      (template) e `05_progresso/{planos_ativos,geral,legados,pendencias}` +
-      `06_glpi` (kit GLPI). Proposta: adotar a arvore do kit GLPI.
+    - [x] **F1.S2.P2** Arvore de documentacao unificada (14/10)
+      Decisao: arvore do kit GLPI (`05_progresso/{planos_ativos,geral,
+      legados,pendencias,historico}` + `06_glpi`); `06_progresso` absorvido.
       <!-- glpi: code="F1.S2.P2" -->
 
-    - [ ] **F1.S2.P3** Estrategia de importacao com historico
-      Criterio: metodo escolhido (subtree ou merge de historicos nao
-      relacionados em branch) e regra de resolucao manual de conflitos.
-      Proibido `-X union` ou "aceitar ambos" sem edicao (causa dos defeitos
-      do Bot_Pan).
+    - [x] **F1.S2.P3** Estrategia de importacao com historico (14/10)
+      Decisao: `git subtree add --prefix=_import/kit-glpi` em branch
+      `integracao/api-vscode-glpi` + `git mv` arquivo a arquivo. Sem conflito
+      de merge (destinos novos); fusoes editoriais a mao. Proibido `-X union`.
       <!-- glpi: code="F1.S2.P3" -->
 
-    - [ ] **F1.S2.P4** Glossario PT-BR
-      Criterio: nomes de skills/agentes, palavras-chave de acionamento, tags,
-      categorias e titulos de chamados GLPI, nomes de estados. Chaves de
-      protocolo GLPI (`todo`, `doing`, `testing`, `done`, `closed`) **nao**
-      sao traduzidas; so os rotulos humanos. Renomear skill quebra comandos
-      ja usados: manter alias depreciado.
+    - [x] **F1.S2.P4** Glossario PT-BR (14/10)
+      Decisao: identificadores de skills mantidos; agentes GLPI traduzidos
+      (`glpi-orquestrador`, `glpi-auditor`, `glpi-migrador`, `glpi-escriba`);
+      chaves de protocolo (`todo`..`closed`) nao traduzidas; aliases
+      DEPRECATED mantidos. Detalhe: `anexos/F1_S2_decisoes-13_10_26.md`.
       <!-- glpi: code="F1.S2.P4" -->
 
     - [ ] **F1.S2.P5** Atualizar `docs/01_requisitos`

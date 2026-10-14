@@ -38,3 +38,4 @@ com underscore e a pasta antiga sai.
 | `10-setup` | `10_setup` |
 | `ia` | `11_ia` |
 | `06_progresso/` | `05_progresso/historico` |
+| `10_livros/` | `07_doc_academica/livros` |

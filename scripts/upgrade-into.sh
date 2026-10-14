@@ -390,7 +390,15 @@ make_backup() {
   fi
   mkdir -p "$BACKUP_DIR" || die "Nao foi possivel criar o backup." 8
   local item src
-  for item in "${KIT_OWNED[@]}" "${PRODUCT_OWNED[@]}"; do
+  # .cursor/skills, .cursor/agents e .github/skills|agents (legado) entram
+  # via sync granular / migracao — precisam de backup explicito
+  local -a EXTRA_BACKUP=(
+    "${KIT_SKILLS_DIR}/"
+    "${KIT_AGENTS_DIR}/"
+    ".github/skills"
+    ".github/agents"
+  )
+  for item in "${KIT_OWNED[@]}" "${PRODUCT_OWNED[@]}" "${EXTRA_BACKUP[@]}"; do
     src="${TARGET_DIR}/${item%/}"
     [[ -e "$src" ]] || continue
     mkdir -p "$(dirname -- "${BACKUP_DIR}/${item%/}")"
@@ -414,11 +422,11 @@ copy_item() {
   local dst="${TARGET_DIR}/${rel%/}"
   if [[ ! -e "$src" ]]; then
     vrb "ausente no kit (ignorado): ${rel}"
-    (( N_MISSING++ )); return 0
+    N_MISSING=$((N_MISSING+1)); return 0
   fi
   if (( APPLY == 0 )); then
     printf '  %soverwrite%s  %s\n' "$C_YEL" "$C_RST" "$rel"
-    (( N_OVERWRITE++ )); return 0
+    N_OVERWRITE=$((N_OVERWRITE+1)); return 0
   fi
   mkdir -p "$(dirname -- "$dst")"
   if [[ -d "$src" ]]; then
@@ -433,7 +441,7 @@ copy_item() {
     cp -a -- "$src" "$dst" || die "Falha ao copiar ${rel}" 8
   fi
   vrb "overwrite: ${rel}"
-  (( N_OVERWRITE++ ))
+  N_OVERWRITE=$((N_OVERWRITE+1))
 }
 
 sync_kit_owned() {
@@ -519,7 +527,7 @@ report_product_owned() {
   for rel in "${PRODUCT_OWNED[@]}"; do
     if [[ -e "${TARGET_DIR}/${rel%/}" ]]; then
       printf '  %spreserve%s   %s\n' "$C_GRN" "$C_RST" "$rel"
-      (( N_PRESERVE++ ))
+      N_PRESERVE=$((N_PRESERVE+1))
     else
       vrb "nao existe no produto: ${rel}"
     fi
@@ -575,7 +583,7 @@ seed_missing() {
     dst_abs="${TARGET_DIR}/${dst}"
     if [[ -e "$dst_abs" ]]; then
       printf '  %sskip%s       %s %s(ja existe)%s\n' "$C_DIM" "$C_RST" "$dst" "$C_DIM" "$C_RST"
-      (( N_SKIP++ )); continue
+      N_SKIP=$((N_SKIP+1)); continue
     fi
     printf '  %sseed%s       %s' "$C_CYN" "$C_RST" "$dst"
     case "$src" in
@@ -583,7 +591,7 @@ seed_missing() {
       __STUB_MODEL__) printf ' %s(stub de modelo)%s\n'       "$C_DIM" "$C_RST" ;;
       *)              printf ' %s(<- %s)%s\n' "$C_DIM" "$src" "$C_RST" ;;
     esac
-    (( N_SEED++ ))
+    N_SEED=$((N_SEED+1))
     (( APPLY == 0 )) && continue
     mkdir -p "$(dirname -- "$dst_abs")"
     case "$src" in
@@ -608,7 +616,7 @@ seed_missing() {
     [[ -f "$from" ]] || from="${SOURCE_DIR}/.glpi/presets/${PRESET}/maps/states.json.example"
     printf '  %sseed%s       .glpi/maps/states.json %s(<- preset %s)%s\n' \
       "$C_CYN" "$C_RST" "$C_DIM" "$PRESET" "$C_RST"
-    (( N_SEED++ ))
+    N_SEED=$((N_SEED+1))
     if (( APPLY == 1 )) && [[ -f "$from" ]]; then
       mkdir -p "$(dirname -- "$st")"; cp -a -- "$from" "$st"
       info "Confirme os IDs com: ./tools/glpi/bin/glpi states discover"
@@ -821,7 +829,7 @@ self_update() {
 
     if (( APPLY == 0 )); then
       printf '  %soverwrite%s  %s %s(atomico)%s\n' "$C_YEL" "$C_RST" "$rel" "$C_DIM" "$C_RST"
-      (( N_OVERWRITE++ ))
+      N_OVERWRITE=$((N_OVERWRITE+1))
       continue
     fi
 
@@ -831,7 +839,7 @@ self_update() {
     chmod +x "$tmp" 2>/dev/null || true
     mv -f -- "$tmp" "$dst" || die "Falha ao mover ${rel}" 8
     vrb "overwrite atomico: ${rel}"
-    (( N_OVERWRITE++ ))
+    N_OVERWRITE=$((N_OVERWRITE+1))
   done
 
   # Bit de execucao em todos os wrappers do CLI

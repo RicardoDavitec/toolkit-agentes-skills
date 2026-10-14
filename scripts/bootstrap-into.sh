@@ -103,6 +103,7 @@ echo "Key:     $KEY"
 echo
 
 # Sempre: tools/glpi
+mkdir -p "$TARGET/tools/glpi"
 rsync -a --exclude '__pycache__/' --exclude '*.pyc' \
   "$KIT_ROOT/tools/glpi/" "$TARGET/tools/glpi/"
 chmod +x "$TARGET/tools/glpi/glpi" "$TARGET/tools/glpi/bin/"* 2>/dev/null || true
@@ -183,6 +184,7 @@ case "$PROFILE" in
     ensure_skills_link
     ;;
   pmf-core|full-skeleton)
+    mkdir -p "$TARGET/.cursor/skills"
     rsync -a --exclude 'config/' "$KIT_ROOT/.cursor/skills/" "$TARGET/.cursor/skills/"
     copy_tree "$KIT_ROOT/.cursor/skills/config" "$TARGET/.cursor/skills/config"
     install_agents

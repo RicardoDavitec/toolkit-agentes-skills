@@ -56,13 +56,13 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 | Code | Titulo | Status |
 |------|--------|--------|
 | F1.S1 | Inventario e diagnostico (13/10) | [x] |
-| F1.S2 | Decisoes de arquitetura (canonico .cursor) | [ ] |
-| F2.S1 | Importacao do API-VScode-GLPI com historico | [ ] |
-| F2.S2 | Unificacao de skills em .cursor/skills (F/S/P longa) | [ ] |
-| F2.S3 | Traducao PT-BR (skills, agentes, GLPI) | [ ] |
-| F2.S4 | Kit de inicializacao de projetos (.cursor) | [ ] |
-| F3.S1 | Validadores automaticos do catalogo | [ ] |
-| F3.S2 | Bootstrap e upgrade em repositorios descartaveis | [ ] |
+| F1.S2 | Decisoes de arquitetura (canonico .cursor) | [x] |
+| F2.S1 | Importacao do API-VScode-GLPI com historico | [x] |
+| F2.S2 | Unificacao de skills em .cursor/skills (F/S/P longa) | [x] |
+| F2.S3 | Traducao PT-BR (skills, agentes, GLPI) | [x] |
+| F2.S4 | Kit de inicializacao de projetos (.cursor) | [x] |
+| F3.S1 | Validadores automaticos do catalogo | [x] |
+| F3.S2 | Bootstrap e upgrade em repositorios descartaveis | [x] |
 | F4.S1 | Piloto no Bot_Pan | [ ] |
 | F4.S2 | Demais projetos consumidores | [ ] |
 | F5.S1 | Aceite, versao e descontinuacao da fonte antiga | [ ] |
@@ -267,7 +267,7 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 
 ### F3 — Testes internos
 
-- [ ] **F3** Testes internos do template
+- [x] **F3** Testes internos do template (fechado 14/10)
   Aceite: validadores verdes e bootstrap/upgrade testados fora de projetos reais.
   <!-- glpi: code="F3" -->
 
@@ -290,16 +290,24 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       tree-validate do exemplo em cada push/PR.
       <!-- glpi: code="F3.S1.P3" -->
 
-  - [ ] **F3.S2** Bootstrap e upgrade em repositorios descartaveis
+  - [x] **F3.S2** Bootstrap e upgrade em repositorios descartaveis (14/10)
     <!-- glpi: code="F3.S2" -->
 
-    - [ ] **F3.S2.P1** Projeto novo vazio
-      Criterio: bootstrap completo; Cursor lista as skills e os agentes a
-      partir de `.cursor/`.
+    - [x] **F3.S2.P1** Projeto novo vazio (14/10)
+      Bootstrap em `/tmp/f32-demo`: 35 skills + 8 agentes em `.cursor/`,
+      symlink `.github/skills`, arvore de docs, lint verde.
+      Bug corrigido: `mkdir -p` antes de rsync em `tools/glpi` e
+      `.cursor/skills` (alvo sem diretorio pai).
       <!-- glpi: code="F3.S2.P1" -->
 
-    - [ ] **F3.S2.P2** Clone de projeto existente
-      Criterio: upgrade preserva arquivos do produto; nenhum arquivo concatenado.
+    - [x] **F3.S2.P2** Clone de projeto existente (14/10)
+      Upgrade em `/tmp/f32-prod` com cenarios dificeis — 6/6: skill do
+      produto preservada; skill legada exclusiva migrada de `.github/skills`;
+      symlink criado; plano do produto intacto; zero arquivos concatenados;
+      backup cobre `.cursor/` (skill `commit` customizada recuperavel).
+      Bugs corrigidos: `(( N++ ))` com `set -e` abortava no primeiro
+      incremento (trocado por `N=$((N+1))`); backup nao cobria
+      `.cursor/skills|agents` nem `.github/` legado (EXTRA_BACKUP).
       <!-- glpi: code="F3.S2.P2" -->
 
 ### F4 — Homologacao

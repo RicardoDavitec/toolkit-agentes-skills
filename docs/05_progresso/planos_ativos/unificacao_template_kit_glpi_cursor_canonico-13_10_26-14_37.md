@@ -217,24 +217,25 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       `FLUXO_COMMIT_CHECKLIST.md`, `NUMERACAO_DOCS.md`, `ci.yml.example`).
       <!-- glpi: code="F2.S2.P6" -->
 
-  - [ ] **F2.S3** Traducao PT-BR
-    Aplicar o glossario do F1.S2.P4.
+  - [x] **F2.S3** Traducao PT-BR (14/10)
+    Glossario do F1.S2.P4 aplicado.
     <!-- glpi: code="F2.S3" -->
 
-    - [ ] **F2.S3.P1** Skills e agentes
-      Criterio: nomes, descricoes e gatilhos em PT-BR; identificadores sem
-      acentos (compatibilidade de tooling).
+    - [x] **F2.S3.P1** Skills e agentes (14/10)
+      Varredura das 41 descriptions (33 skills + 8 agentes): todas PT-BR;
+      identificadores sem acento; `name` = pasta.
       <!-- glpi: code="F2.S3.P1" -->
 
-    - [ ] **F2.S3.P2** Artefatos GLPI
-      Criterio: titulos de chamados, tags, categorias e mapeamento de estados
-      em PT-BR nos templates `.glpi/`. Chaves de protocolo (`todo`, `doing`,
-      `testing`, `done`, `closed`) nao traduzidas.
+    - [x] **F2.S3.P2** Artefatos GLPI (14/10)
+      `generic-phases.json`: Discovery/Design/Implementation/Delivery →
+      Descoberta/Desenho/Implementacao/Entrega. `corporate-phases` mantido
+      (retrato do legado usado pelo migrador). Chaves de protocolo intactas.
       <!-- glpi: code="F2.S3.P2" -->
 
-    - [ ] **F2.S3.P3** Documentacao e guias
-      Criterio: `README.md`, `docs/guia_agentes_skills_ptbr.md` e manuais GLPI
-      unificados; referencias a `.cursor/skills` como canonico.
+    - [x] **F2.S3.P3** Documentacao e guias (14/10)
+      `README.md` reescrito (canonico `.cursor`, bootstrap/upgrade, F/S/P);
+      `guia_agentes_skills_ptbr.md` reescrito (catalogo unico, fluxos,
+      scripts em `.cursor/skills`).
       <!-- glpi: code="F2.S3.P3" -->
 
   - [ ] **F2.S4** Kit de inicializacao de projetos (.cursor)

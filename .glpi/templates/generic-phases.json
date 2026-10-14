@@ -1,7 +1,7 @@
 {
   "template_id": "generic-phases",
   "source": {
-    "label": "Fases genericas — Discovery → Delivery (qualquer GLPI)"
+    "label": "Fases genericas — Descoberta → Entrega (qualquer GLPI)"
   },
   "defaults": {
     "kind": "phase",
@@ -11,15 +11,15 @@
   "phases": [
     {
       "code": "1",
-      "name": "1. Discovery",
+      "name": "1. Descoberta",
       "kind": "phase",
       "percent_done": 0,
       "state": "new",
-      "content": "Fase 1 — Discovery e levantamento."
+      "content": "Fase 1 — Descoberta e levantamento."
     },
     {
       "code": "2",
-      "name": "2. Design",
+      "name": "2. Desenho",
       "kind": "phase",
       "percent_done": 0,
       "state": "new",
@@ -27,7 +27,7 @@
     },
     {
       "code": "3",
-      "name": "3. Implementation",
+      "name": "3. Implementação",
       "kind": "phase",
       "percent_done": 0,
       "state": "processing",
@@ -35,7 +35,7 @@
     },
     {
       "code": "4",
-      "name": "4. Delivery",
+      "name": "4. Entrega",
       "kind": "phase",
       "percent_done": 0,
       "state": "processing",

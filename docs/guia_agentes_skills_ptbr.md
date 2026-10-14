@@ -1,153 +1,141 @@
 # Guia de Uso de Agentes e Skills (PT-BR)
 
-Este guia descreve como usar os agentes e skills criados para um fluxo de desenvolvimento hexagonal com foco em seguranca operacional e rastreabilidade.
+> Atualizado em 14/10/2026 — canonico `.cursor/` (unificacao com o kit GLPI).
+
+Este guia descreve como usar os agentes e skills do **toolkit-agentes-skills**:
+fluxo de desenvolvimento com Cursor, integracao GLPI (modelo F/S/P) e
+operacao segura com rastreabilidade.
+
+## Fonte unica (onde editar)
+
+| O que | Canonico | Atalho |
+|-------|----------|--------|
+| Skills | `.cursor/skills/<nome>/SKILL.md` | `.github/skills` (symlink) |
+| Agentes | `.cursor/agents/<nome>.md` | — |
+
+Nunca edite pelo atalho `.github/skills`. Agentes `.agent.md` (Copilot) foram
+descontinuados.
 
 ## Endpoints operacionais (configuracao central)
 
-- Arquivo: `.github/skills/config/endpoints_operacionais.json`
-- Objetivo: definir destinos padrao e politicas operacionais consumidas por skills e agentes.
-- Blocos principais:
-	- `backup`: destino por SO, fallback por SO e formato de nome de arquivo.
-	- `sessao`: pasta de historico, formato de nome e titulo padrao.
-	- `seguranca`: roots permitidos para escrita.
+- Arquivo: `.cursor/skills/config/endpoints_operacionais.json`
+- Objetivo: destinos padrao e politicas consumidas por skills e agentes.
+- Blocos: `backup` (destino por SO, fallback, formato de nome), `sessao`
+  (pasta de historico, formato, titulo), `seguranca` (roots permitidos).
 
 Padrao atual de backup:
+
 - Windows: `E:/VSCode-bkp`
 - Linux/WSL: `/mnt/e/VSCode-bkp`
 - Darwin: `/Volumes/VSCode-bkp`
-- Fallback nesta maquina quando externo ausente: `D:/VSCode-bkp`
 - Estrutura: `<destino>/<nome-do-projeto>/<commit>_<DD-MM-YY_hh-mm>.tar.gz`
 - Integridade: `<arquivo>.tar.gz.SHA256`
 
-## Estrutura criada
+## Catalogo
 
-### Agentes
-- .github/agents/orquestrador-hexagonal.agent.md
-- .github/agents/revisor-arquitetura-hexagonal.agent.md
-- .github/agents/analista-incidentes-integracao.agent.md
-- .github/agents/operador-entrega-controlada.agent.md
+### Agentes GLPI (`.cursor/agents/`)
 
-### Skills
-- .github/skills/fluxo-orquestrado-hexagonal/SKILL.md
-- .github/skills/guardrails-hexagonal/SKILL.md
-- .github/skills/checar-contratos-portas/SKILL.md
-- .github/skills/revisar-casos-de-uso/SKILL.md
-- .github/skills/operacao-planilha-segura/SKILL.md
-- .github/skills/gate-release-hexagonal/SKILL.md
-- .github/skills/documentar-sessao/SKILL.md
-- .github/skills/backup-projeto/SKILL.md
-- .github/skills/encerrar-sessao/SKILL.md
+| Agente | Quando acionar | Escreve no GLPI? |
+|--------|----------------|------------------|
+| `glpi-orquestrador` | sincronizar repo <-> GLPI (cadeia completa) | sim, com confirmacao |
+| `glpi-auditor` | auditar / CI / status real | **nunca** |
+| `glpi-migrador` | migrar v1 (S/P) -> v2 (F/S/P), uso unico | sim, confirmacao dupla |
+| `glpi-escriba` | planos, commits, sessoes | so em `docs/` |
+
+### Agentes hexagonais (`.cursor/agents/`)
+
+- `orquestrador-hexagonal` — agente principal do fluxo hexagonal
+- `revisor-arquitetura-hexagonal` — boundaries, portas, adaptadores (leitura)
+- `analista-incidentes-integracao` — Twilio, Selenium, Sheets, envios
+- `operador-entrega-controlada` — implementacao com mudanca minima
+
+### Skills operacionais (`.cursor/skills/`)
+
+| Grupo | Skills |
+|-------|--------|
+| Git/remoto | `commit`, `exporte` (push), `importe` (pull), `atualizar` (sincronizar 1 remote), `sincronize` (equalizar origin+github) |
+| Sessao/docs | `documentar`, `documente-o-plano`, `encerrar-sessao`, `oncoto-oncovo`, `planeje-a-semana`, `inserir-pendencia` |
+| Backup/kit | `backup`, `atualizar-kit` |
+| GLPI | `acompanhar-chamado`, `glpi-document-attach`, `glpi-retro-scan`, `glpi-tree-validate`, `glpi-backlog-export`, `glpi-commit-harvest`*, `glpi-progress-rollup`*, `glpi-node-upsert`*, `glpi-phase-ensure`*, `glpi-migrate-codes`* |
+| Aliases DEPRECATED | `glpi-followup` (=acompanhar-chamado), `glpi-project-create`, `glpi-task-upsert` (=glpi-node-upsert), `glpi_seed_phases` (=glpi-phase-ensure) |
+| Hexagonal | `fluxo-orquestrado-hexagonal`, `guardrails-hexagonal`, `checar-contratos-portas`, `revisar-casos-de-uso`, `operacao-planilha-segura`, `gate-release-hexagonal` |
+
+\* especificacao de CLI futuro — a SKILL.md traz nota de status com o
+equivalente manual executavel hoje.
 
 ## Como pensar o fluxo
 
-1. O agente principal orquestra.
+1. Um agente principal orquestra.
 2. Skills definem procedimentos reutilizaveis.
 3. Subagentes executam partes especializadas quando necessario.
 
 ## Fluxos recomendados
 
-### Fluxo 0: Orquestracao completa
-1. Invoque Orquestrador Hexagonal.
-2. Aplique fluxo-orquestrado-hexagonal para quebrar etapas.
-3. Delegue para subagentes por tipo de etapa.
-4. Feche com documentar-sessao e encerrar-sessao.
+### Fluxo GLPI: sincronizar repositorio -> GLPI
 
-### Fluxo 1: Implementacao segura
-1. Invoque Orquestrador Hexagonal com objetivo claro.
-2. Aplique revisar-casos-de-uso.
-3. Se houver risco de arquitetura, aplique guardrails-hexagonal.
-4. Implemente com Operador Entrega Controlada.
-5. Finalize com documentar-sessao.
+1. Invoque `glpi-orquestrador`.
+2. Ele roda a cadeia em dry-run: harvest -> validate (porteiro) ->
+   phase-ensure -> upsert -> rollup -> followup.
+3. Revise a tabela de diff e digite APLICAR para efetivar.
+
+### Fluxo 1: Implementacao segura (hexagonal)
+
+1. Invoque `orquestrador-hexagonal` com objetivo claro.
+2. Aplique `revisar-casos-de-uso`.
+3. Se houver risco de arquitetura, aplique `guardrails-hexagonal`.
+4. Implemente com `operador-entrega-controlada`.
+5. Finalize com `documentar`.
 
 ### Fluxo 2: Incidente de integracao
-1. Invoque Analista Incidentes Integracao.
-2. Aplique checar-contratos-portas.
-3. Se envolver planilha, aplique operacao-planilha-segura.
+
+1. Invoque `analista-incidentes-integracao`.
+2. Aplique `checar-contratos-portas`.
+3. Se envolver planilha, aplique `operacao-planilha-segura`.
 4. Gere recomendacao de mitigacao e correcao definitiva.
-5. Finalize com documentar-sessao.
+5. Finalize com `documentar`.
 
 ### Fluxo 3: Pre-release
-1. Invoque Orquestrador Hexagonal.
-2. Aplique gate-release-hexagonal.
+
+1. Invoque `orquestrador-hexagonal`.
+2. Aplique `gate-release-hexagonal`.
 3. Resolva pendencias apontadas.
-4. Encerrar com encerrar-sessao.
-5. Opcional: backup-projeto.
+4. Encerre com `encerrar-sessao`.
+5. Opcional: `backup`.
 
 ## Padrao de prompts
 
-Use prompts com 4 blocos:
-1. Objetivo
-2. Escopo
-3. Restricoes
-4. Criterio de pronto
-
-Exemplo:
-
-"Objetivo: ajustar fluxo de envio em lote.
-Escopo: somente camada application e adapter twilio.
-Restricoes: sem alterar dominio e sem mexer em deploy.
-Criterio de pronto: testes passando e documentacao de decisao atualizada."
+Use prompts com 4 blocos: **Objetivo** · **Escopo** · **Restricoes** ·
+**Criterio de pronto**.
 
 ## Convencoes de nomeacao (PT-BR sem acento)
 
-- Agentes: substantivo + contexto, exemplo: operador-entrega-controlada.
-- Skills: verbo no infinitivo + objeto, exemplo: checar-contratos-portas.
-- Evite acentos e espacos para manter compatibilidade de tooling.
-
-## Boas praticas
-
-1. Mantenha skills focadas e curtas.
-2. Evite skill monolitica com muitos objetivos.
-3. Prefira subagente para analise especializada.
-4. Use documentar-sessao em marcos de trabalho.
-5. Use encerrar-sessao no fechamento do dia.
-
-## Proximas evolucoes sugeridas
-
-1. Adicionar templates em .github/skills/<skill>/assets para padronizar saida.
-2. Integrar backup-projeto com validacao de destino externo e retencao.
-3. Criar script de gate-release com verificacoes automatizadas.
+- Agentes: substantivo + contexto (ex.: `operador-entrega-controlada`).
+- Skills: verbo no infinitivo + objeto (ex.: `checar-contratos-portas`).
+- Identificadores sem acento; `name` do YAML igual ao nome da pasta.
 
 ## Execucao rapida de scripts de apoio
 
-1. Checklist de fluxo:
-python .github/skills/fluxo-orquestrado-hexagonal/scripts/gerar_checklist_fluxo.py
+```bash
+# Checklist de fluxo hexagonal
+python .cursor/skills/fluxo-orquestrado-hexagonal/scripts/gerar_checklist_fluxo.py
 
-2. Resumo de sessao:
-python .github/skills/documentar-sessao/scripts/gerar_resumo_sessao.py
-python .github/skills/documentar-sessao/scripts/gerar_resumo_sessao.py --saida docs/06_progresso/historico/sessao_2026-04-03.md
+# Resumo de sessao
+python .cursor/skills/documentar/scripts/gerar_resumo_sessao.py
 
-3. Checklist de encerramento:
-python .github/skills/encerrar-sessao/scripts/checklist_encerramento.py --repo .
+# Checklist de encerramento
+python .cursor/skills/encerrar-sessao/scripts/checklist_encerramento.py --repo .
 
-4. Backup por ambiente:
-python .github/skills/backup-projeto/scripts/backup_projeto.py
-python .github/skills/backup-projeto/scripts/backup_projeto.py --destino E:\\VSCode-bkp
+# Backup por ambiente
+python .cursor/skills/backup/scripts/backup_projeto.py
+```
 
-## Variaveis de ambiente para endpoints de backup
+## Variaveis de ambiente
 
-- Destino principal por SO:
-	- `BACKUP_DESTINO_WINDOWS`
-	- `BACKUP_DESTINO_LINUX`
-	- `BACKUP_DESTINO_DARWIN`
-- Fallback por SO:
-	- `BACKUP_DESTINO_FALLBACK_WINDOWS`
-	- `BACKUP_DESTINO_FALLBACK_LINUX`
-	- `BACKUP_DESTINO_FALLBACK_DARWIN`
+- Backup: `BACKUP_DESTINO_<SO>`, `BACKUP_DESTINO_FALLBACK_<SO>`, `BACKUP_ROOT`,
+  `BACKUP_EXCLUDE`, `BACKUP_FORMAT`
+- Sessao: `SESSAO_HISTORICO_RELATIVO_REPO`, `SESSAO_FORMATO_NOME_ARQUIVO`,
+  `SESSAO_TITULO_PADRAO`
+- Precedencia: argumento CLI > variavel de ambiente > config central > fallback
 
-Arquivo exemplo por maquina:
-- `.env.endpoints.backup.example`
-
-Fluxo recomendado:
-1. Copiar as chaves necessarias do arquivo exemplo para o `.env` local.
-2. Ajustar caminhos conforme a maquina atual.
-3. Rodar `checklist_encerramento.py` para confirmar endpoint resolvido.
-
-Observacao:
-- Os scripts de backup, encerramento e documentacao carregam automaticamente variaveis do `.env` da raiz do repositorio (quando `python-dotenv` estiver disponivel).
-
-## Variaveis de ambiente para endpoints de sessao
-
-- `SESSAO_HISTORICO_RELATIVO_REPO`
-- `SESSAO_FORMATO_NOME_ARQUIVO`
-- `SESSAO_TITULO_PADRAO`
+Os scripts carregam automaticamente variaveis do `.env` da raiz do repositorio
+(quando `python-dotenv` estiver disponivel).

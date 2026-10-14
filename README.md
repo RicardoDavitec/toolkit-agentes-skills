@@ -1,64 +1,77 @@
 # toolkit-agentes-skills
 
-Kit reutilizavel de agentes e skills para VS Code + Copilot Chat, com foco em operacao segura, documentacao de sessao e backup portavel por maquina.
+Kit reutilizavel de **agentes e skills para Cursor**, com integracao **GLPI**
+via API REST (qualquer instancia) e fluxo de documentacao **F/S/P**
+(Fase / Sessao-Sprint / Tarefa ancorada em commit). Unifica o antigo
+`pmf-dev-kit` (API-VScode-GLPI) e o template hexagonal.
 
 ## Conteudo
 
-- `.github/agents/`: agentes especializados (orquestrador, revisor, operador, analista).
-- `.github/skills/`: skills operacionais e de fluxo.
-- `.github/skills/config/endpoints_operacionais.json`: endpoints padrao de backup/sessao.
-- `.env.endpoints.example`: exemplo de variaveis de ambiente por maquina.
+- `.cursor/skills/`: **catalogo canonico** de skills (33) — operacao git,
+  sessao, backup, GLPI e fluxo hexagonal.
+- `.cursor/agents/`: **catalogo canonico** de agentes (8) — 4 GLPI
+  (`glpi-orquestrador`, `glpi-auditor`, `glpi-migrador`, `glpi-escriba`) +
+  4 hexagonais.
+- `.github/skills`: **symlink** para `../.cursor/skills` (compatibilidade;
+  nunca editar por aqui).
+- `tools/glpi/`: CLI GLPI (`bin/glpi-*`) vendorizado nos consumidores.
+- `.glpi/`: configuracao por produto — **sem segredos** no template
+  (`*.example`, `presets/`, `templates/`, `model.defaults.yaml`).
+- `scripts/`: `bootstrap-into.sh`, `upgrade-into.sh`, `install-glpi.sh`,
+  `install_glpi.py`, `atualizar-kit` (+`.py`).
+- `docs/06_glpi/`: manual da integracao GLPI.
 - `docs/guia_agentes_skills_ptbr.md`: guia de uso em Portugues-BR.
-- `docs/00_visao_geral` ate `docs/06_progresso/historico`: esqueleto padrao de documentacao.
 
-## Skills principais
+## Precedencia (fonte unica)
 
-- `backup-projeto`
-- `documentar-sessao`
-- `encerrar-sessao`
-- `fluxo-orquestrado-hexagonal`
-- `guardrails-hexagonal`
-- `checar-contratos-portas`
-- `revisar-casos-de-uso`
-- `operacao-planilha-segura`
-- `gate-release-hexagonal`
+1. **Canonico**: `.cursor/skills/<nome>/SKILL.md` e `.cursor/agents/<nome>.md`.
+2. `.github/skills` e apenas um link — edicoes sempre em `.cursor/`.
+3. Agentes `.agent.md` (Copilot) foram **descontinuados** neste kit.
 
 ## Setup rapido
 
-1. Copie os arquivos deste repositiorio para o projeto alvo.
-2. Copie as variaveis necessarias de `.env.endpoints.example` para o `.env` local do projeto alvo.
-3. Ajuste caminhos por maquina (Windows/Linux/Darwin).
-4. Use os scripts das skills para validar operacao.
+### Projeto novo (bootstrap)
+
+```bash
+./scripts/bootstrap-into.sh --target=/caminho/do/projeto
+```
+
+### Projeto existente (upgrade)
+
+```bash
+./scripts/upgrade-into.sh --target=. --apply
+```
+
+Os scripts copiam `.cursor/skills` e `.cursor/agents`, criam o symlink
+`.github/skills -> ../.cursor/skills` e preservam a camada do produto
+(skills proprias, `.glpi/project.yaml`, `workspace.yaml`, estados).
 
 ## Arvore padrao de docs
 
-- `docs/00_visao_geral`
-- `docs/01_requisitos`
-- `docs/02_arquitetura`
-- `docs/03_implementacao`
-- `docs/04_operacao`
-- `docs/05_progresso`
-- `docs/06_progresso/historico`
+- `docs/00_visao_geral` · `01_requisitos` · `02_arquitetura` ·
+  `03_implementacao` · `04_operacao`
+- `docs/05_progresso/{planos_ativos,geral,legados,pendencias,historico}`
+- `docs/06_glpi`
 
-## Precedencia de configuracao (backup/sessao)
+## Modelo F/S/P
 
-1. Argumentos de linha de comando (`--destino`, `--saida`, `--titulo`)
-2. Variaveis de ambiente no shell ou no `.env`
-3. `.github/skills/config/endpoints_operacionais.json`
-4. Fallback local no repositorio
-
-## Publicar no GitHub
-
-```powershell
-git init
-git add .
-git commit -m "chore: estrutura inicial toolkit-agentes-skills"
-git branch -M main
-git remote add origin <URL_DO_REPO_NO_GITHUB>
-git push -u origin main
+```text
+Projeto -> F (fase) -> S (sessao/sprint/semana) -> P (tarefa ~2h, ancorada em commit)
+F1 Planejamento · F2 Implementacao · F3 Testes Internos · F4 Homologacao · F5 Aprovacao
+Estados (papeis, nao IDs): todo -> doing -> testing -> done -> closed
+Marcadores: [ ] [~] [t] [x] [A]
 ```
+
+## Segredos
+
+Nunca no template: tokens, `.env`, `instance.yaml`, `project.yaml`,
+`maps/states.json`. O `.gitignore` ja cobre; o lint de catalogo bloqueia.
 
 ## Observacoes
 
-- Este kit funciona tambem em projetos nao-hexagonais. Basta manter as skills operacionais e adaptar os agentes/skills de arquitetura para o dominio do projeto.
-- Nomes de arquivos e identificadores estao sem acentos para manter compatibilidade ampla com tooling.
+- Funciona em qualquer projeto (hexagonal ou nao); as skills operacionais
+  valem para todos, os agentes/skills hexagonais sao opcionais.
+- Identificadores sem acento (compatibilidade de tooling); textos e gatilhos
+  em Portugues-BR.
+- Symlink `.github/skills`: no Windows nativo exige Modo de Desenvolvedor +
+  `core.symlinks=true`; em WSL/Linux/macOS funciona nativamente.

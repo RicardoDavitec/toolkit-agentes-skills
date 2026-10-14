@@ -2,9 +2,23 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+**/__pycache__/
 .venv/
 venv/
 .env
 .env.local
+*.log
 .DS_Store
 Thumbs.db
+
+# GLPI — configs reais e segredos ficam fora do template
+.glpi/state-project-*.json
+.glpi/project.yaml
+.glpi/project.homolog.yaml
+.glpi/workspace.yaml
+.glpi/instance.yaml
+.glpi/maps/states.json
+.glpi/maps/phase-map.json
+docs/06_glpi/retro-scans/*.json
+docs/06_glpi/retro-scans/*.md
+!docs/06_glpi/retro-scans/README.md

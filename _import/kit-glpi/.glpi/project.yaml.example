@@ -1,0 +1,26 @@
+# Config GLPI do produto (SEM SECRETS). Só os deltas sobre preset+kit.
+schema: 2
+key: meu-produto
+code: MEUPROD                    # 2..12 chars, A-Z0-9_
+preset: api-vscode-glpi          # ou generic
+
+project_id: null                 # Project raiz (preenchido por project-upsert --apply)
+project_name: "Meu Produto"
+
+phases:                          # preenchido por glpi-phase-ensure --apply
+  F1: { id: null }
+  F2: { id: null }
+  F3: { id: null }
+  F4: { id: null }
+  F5: { id: null }
+
+legacy_phases: {}                # ex.: { "1": 27, "4.1": 24 } se adotar legado
+
+git:
+  default_branch: main
+  homolog_branches: ["homolog", "release/*"]
+  conventional_commits: true
+
+overrides:                       # deltas de modelo deste produto (opcional)
+  # rollup: { mode: simple }
+  # lifecycle: { phases: [ { code: F2, weight: 0.50 }, { code: F3, weight: 0.10 } ] }

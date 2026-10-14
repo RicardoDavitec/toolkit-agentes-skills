@@ -63,8 +63,8 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 | F2.S4 | Kit de inicializacao de projetos (.cursor) | [x] |
 | F3.S1 | Validadores automaticos do catalogo | [x] |
 | F3.S2 | Bootstrap e upgrade em repositorios descartaveis | [x] |
-| F4.S1 | Piloto no Bot_Pan | [ ] |
-| F4.S2 | Demais projetos consumidores | [ ] |
+| F4.S1 | Piloto no Bot_Pan | [~] |
+| F4.S2 | Demais projetos consumidores | [x] |
 | F5.S1 | Aceite, versao e descontinuacao da fonte antiga | [ ] |
 
 ## Fases e tarefas
@@ -312,40 +312,70 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 
 ### F4 — Homologacao
 
-- [ ] **F4** Homologacao nos projetos consumidores
-  Aceite: piloto aprovado e consumidores atualizados.
+- [~] **F4** Homologacao nos projetos consumidores
+  Aceite: piloto aprovado e consumidores atualizados. Falta o follow-up
+  GLPI (F4.S1.P3) para fechar.
   <!-- glpi: code="F4" -->
 
-  - [ ] **F4.S1** Piloto no Bot_Pan
+  - [~] **F4.S1** Piloto no Bot_Pan
     <!-- glpi: code="F4.S1" -->
 
-    - [ ] **F4.S1.P1** Sanear o Bot_Pan antes do upgrade
-      Criterio: 13 skills concatenadas, 7 arquivos com marcadores de conflito,
-      `ricardizar/Skill.md` e remote `origin` corrigidos.
+    - [x] **F4.S1.P1** Sanear o Bot_Pan antes do upgrade (14/10)
+      Marcadores de conflito removidos em `.gitignore`, `LICENSE`,
+      `README.md`, `docs/README.md`, `FLUXO_COMMIT_CHECKLIST.md` e
+      `scripts/atualizar-kit` (lado do produto; ignores GLPI acrescentados).
+      `docs/05_progresso/geral/README.md` ja estava limpo.
+      `ricardizar/Skill.md` era um dump de dois arquivos: virou
+      `.cursor/skills/estilo-ricardo-david/SKILL.md` e
+      `.cursor/agents/redator-ricardo-david.md`.
+      `origin` ja estava sem o ponto final (`https://github.com/RicardoDavitec/Bot_Pan.git`).
+      Commit `4e8f6aa` em `Bot_Pan` `main` (nao enviado).
       <!-- glpi: code="F4.S1.P1" -->
 
-    - [ ] **F4.S1.P2** Upgrade a partir do template
-      Criterio: catalogo unico em `.cursor/`; `.github/skills` deixa de ser
-      copia e vira symlink. Skills de produto (`build-*`, `deploy-*`,
-      `registrar-tentativa`, `revisar-docs`) preservadas.
+    - [x] **F4.S1.P2** Upgrade a partir do template (14/10)
+      Catalogo em `.cursor/` (48 skills, 15 agentes); `.github/skills` ->
+      `../.cursor/skills`. Preservadas `build-*`, `deploy-*`,
+      `registrar-tentativa`, `revisar-docs`, `empacotar-apk` e
+      `estilo-ricardo-david`. Zero `description` duplicada.
+      Correcao no kit: `upgrade-into.sh` reescreve o wrapper do produto
+      para o `SOURCE_DIR` (a copia cega apontava o produto para si mesmo).
+      `instance.yaml` do Bot_Pan passou a ler `~/.secrets/glpi.env`
+      (o legado `GLPI-tokens.txt` nao existe).
+      Commit `b7bb123` em `Bot_Pan` `main` (nao enviado).
       <!-- glpi: code="F4.S1.P2" -->
 
-    - [ ] **F4.S1.P3** Uso real
-      Criterio: `commit`, `encerrar-sessao`, `documente-o-plano` e
-      `acompanhar-chamado` exercitados contra GLPI de homologacao.
+    - [~] **F4.S1.P3** Uso real
+      `commit` exercitado nos commits do piloto. `documente-o-plano`
+      exercitado neste plano. Leitura de homologacao:
+      `glpi --env=homolog ticket get` -> chamado 5621, status 6,
+      nome "verificar fibra PSI" (API `suporte-homolog`, sem escrita).
+      Follow-up **nao enviado**: a skill `acompanhar-chamado` exige
+      confirmacao do titulo, e o chamado aberto nao e deste upgrade.
+      `encerrar-sessao` fica para o fechamento do dia.
       <!-- glpi: code="F4.S1.P3" -->
 
-  - [ ] **F4.S2** Demais projetos consumidores
+  - [x] **F4.S2** Demais projetos consumidores (14/10)
     <!-- glpi: code="F4.S2" -->
 
-    - [ ] **F4.S2.P1** Ordem e riscos por projeto
+    - [x] **F4.S2.P1** Ordem e riscos por projeto (14/10)
+      Ordem: samu-operacional (preservar `implemente` e
+      `.glpi/project.yaml`; conflito em `glpi-retro-scan`), depois
+      mev_v3 e Barra_Factory (sem `.cursor/`; descartar `commit-skill`),
+      chatbot-docs por ultimo. Risco: wrapper `atualizar-kit` e
+      `.glpi/kit.yaml` precisam apontar para o template, nao para o
+      produto. chatbot-docs ausente no GitHub e no Gitness — exclusao.
       <!-- glpi: code="F4.S2.P1" -->
 
-    - [ ] **F4.S2.P2** Aplicar upgrade
-      Criterio: samu-operacional (preservando `implemente` e
-      `.glpi/project.yaml`), mev_v3 (quando houver clone de verdade),
-      Barra_Factory e chatbot-docs (quando presentes) atualizados ou com
-      justificativa de exclusao.
+    - [x] **F4.S2.P2** Aplicar upgrade (14/10)
+      samu-operacional (`teste-sigs-samu-operacional`, ahead 1):
+      `project.yaml` com o mesmo SHA-256 de antes; `implemente`
+      preservada; symlink criado; conflito de `glpi-retro-scan` sumiu
+      com a versao do kit.
+      mev_v3 e Barra_Factory (`main`, ahead 1 cada): `.github/skills`
+      virou symlink; `commit-skill` removida antes do upgrade para nao
+      ser migrada. chatbot-docs: exclusao — repositorio inexistente
+      localmente, no GitHub RicardoDavitec e no Gitness.
+      Commits locais, nao enviados.
       <!-- glpi: code="F4.S2.P2" -->
 
 ### F5 — Aprovacao

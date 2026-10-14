@@ -444,6 +444,30 @@ copy_item() {
   N_OVERWRITE=$((N_OVERWRITE+1))
 }
 
+# O entrypoint scripts/atualizar-kit do kit aponta para o proprio repositorio.
+# No produto ele precisa delegar ao kit fonte (SOURCE_DIR).
+install_product_wrapper() {
+  local wrapper="${TARGET_DIR}/scripts/atualizar-kit"
+  local ky="${TARGET_DIR}/.glpi/kit.yaml"
+  if (( APPLY == 0 )); then
+    printf '  %swrapper%s   scripts/atualizar-kit -> %s\n' "$C_YEL" "$C_RST" "$SOURCE_DIR"
+    return 0
+  fi
+  mkdir -p "${TARGET_DIR}/scripts" "${TARGET_DIR}/.glpi"
+  cat > "$wrapper" <<EOF
+#!/usr/bin/env bash
+# Wrapper local — delega ao toolkit-agentes-skills (nao editar logica aqui).
+set -euo pipefail
+KIT="${SOURCE_DIR}"
+TARGET="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")/.." && pwd)"
+exec python3 "\$KIT/scripts/atualizar_kit.py" --kit="\$KIT" --target="\$TARGET" "\$@"
+EOF
+  chmod +x "$wrapper"
+  printf '# Caminho do repositorio fonte toolkit-agentes-skills (sync via scripts/atualizar-kit)\npath: %s\n' \
+    "$SOURCE_DIR" > "$ky"
+  ok "Wrapper scripts/atualizar-kit -> ${SOURCE_DIR}"
+}
+
 sync_kit_owned() {
   step "Camada K (kit-owned) — sobrescrita"
   local rel
@@ -1068,6 +1092,7 @@ main() {
   # --- fase 3: escrita ---
   make_backup
   sync_kit_owned
+  install_product_wrapper
   sync_dir_granular "$KIT_SKILLS_DIR"
   sync_dir_granular "$KIT_AGENTS_DIR"
   ensure_cursor_canonico

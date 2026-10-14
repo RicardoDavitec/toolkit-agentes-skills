@@ -149,9 +149,9 @@ preencher as janelas (filho contido no pai) — ver pendencias.
   duplicacao.
   <!-- glpi: code="F2" -->
 
-  - [ ] **F2.S1** Importacao do API-VScode-GLPI com historico
-    Trazer o conteudo para o template em branch propria, preservando
-    historico e resolvendo conflitos **arquivo a arquivo**.
+  - [x] **F2.S1** Importacao do API-VScode-GLPI com historico (14/10)
+    Subtree `_import/kit-glpi` (f83ff4f) + `git mv` arquivo a arquivo;
+    configs reais fora; `_import/` removido ao final.
     <!-- glpi: code="F2.S1" -->
 
     - [x] **F2.S1.P1** Branch de integracao e importacao (14/10)
@@ -171,8 +171,9 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       `maps/states.json`) fora do template; `.gitignore` cobrindo segredos.
       <!-- glpi: code="F2.S1.P3" -->
 
-  - [ ] **F2.S2** Unificacao de skills em `.cursor/skills` (F/S/P longa)
-    Reescrever o catalogo conforme a matriz do F1.S1.P4.
+  - [x] **F2.S2** Unificacao de skills em `.cursor/skills` (F/S/P longa) (14/10)
+    Catalogo unico: 33 skills + 8 agentes em `.cursor/`; `.github/skills`
+    = symlink; fusoes editoriais concluidas.
     <!-- glpi: code="F2.S2" -->
 
     - [x] **F2.S2.P1** Skills na versao longa F/S/P (14/10)
@@ -200,17 +201,20 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       virou pendencia (ver Pendencias).
       <!-- glpi: code="F2.S2.P4" -->
 
-    - [ ] **F2.S2.P5** Agentes em `.cursor/agents/*.md`
-      Criterio: agentes GLPI (`orchestrator`, `auditor`, `migrator`, `scribe`)
-      e agentes hexagonais do template reescritos em formato Cursor
-      (`.cursor/agents/<nome>.md`), a partir de fonte unica. Sem conversao
-      automatica de `.agent.md` — reescrita manual.
+    - [x] **F2.S2.P5** Agentes em `.cursor/agents/*.md` (14/10)
+      8 agentes reescritos em formato Cursor: `glpi-orquestrador`,
+      `glpi-auditor`, `glpi-migrador`, `glpi-escriba` (GLPI) +
+      `orquestrador-hexagonal`, `revisor-arquitetura-hexagonal`,
+      `analista-incidentes-integracao`, `operador-entrega-controlada`.
+      Skills-spec marcadas com equivalente manual.
       <!-- glpi: code="F2.S2.P5" -->
 
-    - [ ] **F2.S2.P6** Espelho `.github/skills` conforme F1.S2.P1
-      Criterio: `.github/skills` e um symlink apontando para `../.cursor/skills`;
-      scripts e documentacao que referenciam `.github/skills/...` continuam
-      funcionando.
+    - [x] **F2.S2.P6** Espelho `.github/skills` conforme F1.S2.P1 (14/10)
+      `.github/skills` = symlink `../.cursor/skills` (testado: lista o
+      catalogo). `.github/agents/*.agent.md` (Copilot) removidos.
+      `_import/` removido; exemplos uteis do kit incorporados
+      (`PLANO_IMPLEMENTACAO.md.example`, `CHECKLIST_PENDENCIAS.md.example`,
+      `FLUXO_COMMIT_CHECKLIST.md`, `NUMERACAO_DOCS.md`, `ci.yml.example`).
       <!-- glpi: code="F2.S2.P6" -->
 
   - [ ] **F2.S3** Traducao PT-BR

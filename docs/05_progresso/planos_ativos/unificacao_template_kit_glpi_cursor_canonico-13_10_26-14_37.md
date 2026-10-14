@@ -97,11 +97,11 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       Barra_Factory e chatbot-docs nao estao nesta maquina.
       <!-- glpi: code="F1.S1.P3" -->
 
-    - [ ] **F1.S1.P4** Matriz de mapeamento skills/agentes
+    - [x] **F1.S1.P4** Matriz de mapeamento skills/agentes
       Criterio: cada item com destino (manter/fundir/renomear/descartar),
-      nome final PT-BR e versao de origem escolhida. Incluir `sincronize`,
-      que existe nos consumidores e em `~/.cursor/skills` mas **nao** existe
-      no `API-VScode-GLPI`.
+      nome final PT-BR e versao de origem escolhida. Incluir `sincronize`.
+      Detalhe: `anexos/F1_S1_P4_matriz_mapeamento-14_10_26.md` (36 skills +
+      8 agentes entram no template).
       <!-- glpi: code="F1.S1.P4" -->
 
   - [ ] **F1.S2** Decisoes de arquitetura do template

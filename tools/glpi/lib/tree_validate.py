@@ -174,6 +174,20 @@ def validate_items(items, strict=False, only=None, skip=None):
             if start and end and start > end:
                 add("V05", "error", f"inicio posterior ao fim: {code or name!r}")
 
+        if decide_rule("V23", only, skip):
+            for field in (
+                "plan_start_date",
+                "plan_end_date",
+                "planned_duration",
+                "effective_duration",
+            ):
+                if field not in item or item.get(field) in (None, ""):
+                    add(
+                        "V23",
+                        "warning",
+                        f"campo temporal ausente ({field}): {code or name!r}",
+                    )
+
         if decide_rule("V06", only, skip):
             percent = item.get("percent_done")
             try:

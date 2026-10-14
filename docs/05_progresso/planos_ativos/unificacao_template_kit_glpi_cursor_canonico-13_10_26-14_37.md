@@ -399,7 +399,13 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 
 ## Pendencias
 
-- [ ] Definir janelas `plan_start`/`plan_end` de F, S e P antes de integrar ao GLPI.
+- [~] Definir janelas `plan_start`/`plan_end` de F, S e P antes de integrar ao GLPI.
+  Regra gravada em 14/10: toda ProjectTask leva `plan_start_date`,
+  `plan_end_date`, `planned_duration` e `effective_duration`. Sem timesheet,
+  estimar (pacote 2 h, fase sem filhos 8 h, fase com filhos = soma).
+  Projeto 72 (SIGS-Samu) preenchido por `glpi-temporal-fill`. Os outros
+  projetos GLPI (SIGMA, SIGTI, SIGLM, DevOps, Desenvolvimento Próprio) ficam
+  de fora até haver plano, sessão ou commit deles neste workspace.
 - [x] Decidir se `docs/06_progresso/` do template e mantido ou absorvido. (14/10: absorvido em `05_progresso/historico`)
 - [x] Preencher `docs/01_requisitos` do template (F1.S2.P5). (14/10)
 - [x] Escrever anexos `F1_S1_inventario-13_10_26.md` e `F1_S2_decisoes-13_10_26.md`. (14/10)

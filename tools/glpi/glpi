@@ -403,6 +403,8 @@ parse_task_flags() {
   TASK_PLAN_END=""
   TASK_REAL_START=""
   TASK_REAL_END=""
+  TASK_PLANNED_DURATION=""
+  TASK_EFFECTIVE_DURATION=""
   TASK_MILESTONE=""
   TASK_PARENT=""
   TASK_PARENT_CODE=""
@@ -426,6 +428,8 @@ parse_task_flags() {
       --plan-end=*) TASK_PLAN_END="$(normalize_glpi_datetime "${arg#--plan-end=}")" ;;
       --real-start=*) TASK_REAL_START="$(normalize_glpi_datetime "${arg#--real-start=}")" ;;
       --real-end=*) TASK_REAL_END="$(normalize_glpi_datetime "${arg#--real-end=}")" ;;
+      --planned-duration=*) TASK_PLANNED_DURATION="${arg#--planned-duration=}" ;;
+      --effective-duration=*) TASK_EFFECTIVE_DURATION="${arg#--effective-duration=}" ;;
       --milestone) TASK_MILESTONE=1 ;;
       --no-milestone) TASK_MILESTONE=0 ;;
       --parent-code=*) TASK_PARENT_CODE="${arg#--parent-code=}" ;;
@@ -486,6 +490,8 @@ build_task_input() {
     --arg plan_end "${TASK_PLAN_END}" \
     --arg real_start "${TASK_REAL_START}" \
     --arg real_end "${TASK_REAL_END}" \
+    --arg planned_duration "${TASK_PLANNED_DURATION}" \
+    --arg effective_duration "${TASK_EFFECTIVE_DURATION}" \
     --arg milestone "${TASK_MILESTONE}" \
     --arg parent "${parent_id}" \
     --arg state "${state_id}" \
@@ -501,6 +507,8 @@ build_task_input() {
     | put("plan_end_date"; $plan_end)
     | put("real_start_date"; $real_start)
     | put("real_end_date"; $real_end)
+    | putn("planned_duration"; $planned_duration)
+    | putn("effective_duration"; $effective_duration)
     | putn("is_milestone"; $milestone)
     | putn("projecttasks_id"; $parent)
     | putn("projectstates_id"; $state)

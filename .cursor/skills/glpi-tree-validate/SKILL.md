@@ -32,6 +32,7 @@ ou o **estado remoto** no GLPI.
 | V03 | Sem orfaos: todo S tem F; todo P tem S | erro |
 | V04 | `plan_start(filho) >= plan_start(pai)` e `plan_end(filho) <= plan_end(pai)` | erro |
 | V05 | `plan_start <= plan_end` e `real_start <= real_end` | erro |
+| V23 | `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration` presentes | aviso (erro com `--strict`) |
 | V06 | Coerencia estado x datas x percentual (`state_rules`) | erro |
 | V07 | Pai `done`/`closed` só se **todos** os filhos `done`/`closed` | erro |
 | V08 | `percent_done` do pai == rollup ponderado (tol. `tolerance_pp`) | aviso |

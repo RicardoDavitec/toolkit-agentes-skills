@@ -83,7 +83,8 @@ proprios de "Testando" e "Fechado" que o modelo antigo nao usava.
 
 ## Regras duras
 
-- **Nao inventar `real_*`.** Sem dado -> omitir o atributo.
+- **Nao inventar `real_*`.** Sem evidencia (sessao, commit ou data ja gravada) -> omitir o atributo.
+- **Datas e duracoes no GLPI sao obrigatorias** em toda ProjectTask: `plan_start_date`, `plan_end_date`, `planned_duration`, `effective_duration`. Sem timesheet, estimar: pacote = 2 h, fase sem filhos = 8 h, fase com filhos = soma. Duracao efetiva = 0 se nao comecou; proporcional ao percentual se em curso; igual a planejada se concluido sem outra evidencia. A data e a janela; a duracao e o esforco.
 - **Nao inventar RN** (regra de negocio). Requisito faltante -> acao de documentar.
 - **Nao commitar secrets** no plano nem nos anexos.
 - Plano principal **curto** (organograma + 1 paragrafo por S); detalhe nos anexos.

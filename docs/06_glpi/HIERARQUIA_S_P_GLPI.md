@@ -42,6 +42,19 @@ Campos temporais e progresso no `PLANO_IMPLEMENTACAO.md` (por fase e por item):
 | `GEP` | `projectstates_id` |
 | `Plan ini` / `Plan fim` | `plan_start_date` / `plan_end_date` |
 | `Real ini` / `Real fim` | `real_start_date` / `real_end_date` |
+| Duração planejada | `planned_duration` (segundos) |
+| Duração efetiva | `effective_duration` (segundos) |
+
+Os quatro campos de janela e esforço são obrigatórios em toda ProjectTask.
+A data é a janela de calendário; a duração é o esforço, não o vão entre as datas.
+
+| Situação | Data planejada | Duração planejada | Duração efetiva |
+|----------|----------------|-------------------|-----------------|
+| Pacote (folha) | a do plano, se houver | 2 h (7200 s), salvo vão já gravado de até 10 h | 0 se não começou; proporcional se em curso; igual à planejada se concluído sem timesheet |
+| Fase com filhos | min/max dos filhos, se a fase não tiver data | soma dos filhos | soma dos filhos |
+| Fase sem filhos e sem evidência | `date_creation` até início + 8 h | 8 h (28800 s) | 0 enquanto `percent_done` = 0 |
+
+`real_start` / `real_end` só entram com evidência (sessão, commit ou data já gravada). Não se inventa data real. Comando: `tools/glpi/bin/glpi-temporal-fill`.
 | `Critério` / átomos | trecho de `content` |
 
 ### Fluxo da informação

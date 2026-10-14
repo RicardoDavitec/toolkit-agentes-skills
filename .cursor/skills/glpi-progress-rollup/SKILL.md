@@ -9,6 +9,12 @@ description: >-
 
 # Skill: glpi-progress-rollup
 
+> **Status do binario:** `tools/glpi/bin/glpi-progress-rollup` ainda **nao
+> existe** (pendencia registrada no plano de unificacao). Esta skill e a
+> especificacao do fluxo. Ate a implementacao, executar manualmente:
+> calcular percentuais pelas formulas abaixo e aplicar com
+> `glpi-task-upsert` (`--percent-complete`).
+
 Mantem a coerencia vertical da arvore: ninguem edita percentual de pai a mao.
 
 ## Formulas

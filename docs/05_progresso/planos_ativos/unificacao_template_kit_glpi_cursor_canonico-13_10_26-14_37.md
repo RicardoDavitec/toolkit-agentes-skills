@@ -192,11 +192,12 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       Copiada de `~/.cursor/skills/sincronize` para `.cursor/skills/sincronize`.
       <!-- glpi: code="F2.S2.P3" -->
 
-    - [ ] **F2.S2.P4** Binarios GLPI faltantes
-      Criterio: existem os binarios citados pelas skills F/S/P
-      (`glpi-commit-harvest`, `glpi-progress-rollup`, `glpi-node-upsert`,
-      `glpi-phase-ensure`, `glpi-migrate-codes`) ou as skills deixam de
-      cita-los. `glpi-tree-validate` ja existe em `tools/glpi/bin/`.
+    - [x] **F2.S2.P4** Binarios GLPI faltantes (14/10)
+      Decisao: as 5 skills sao **especificacoes** de CLIs futuros; cada uma
+      recebeu nota de status com o equivalente manual executavel hoje
+      (`glpi-task-upsert`, `glpi-seed-phases`, `glpi-tree-validate`,
+      `glpi-followup`, `glpi-retro-scan/apply`). Implementacao dos binarios
+      virou pendencia (ver Pendencias).
       <!-- glpi: code="F2.S2.P4" -->
 
     - [ ] **F2.S2.P5** Agentes em `.cursor/agents/*.md`
@@ -349,10 +350,13 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 ## Pendencias
 
 - [ ] Definir janelas `plan_start`/`plan_end` de F, S e P antes de integrar ao GLPI.
-- [ ] Decidir se `docs/06_progresso/` do template e mantido ou absorvido.
-- [ ] Preencher `docs/01_requisitos` do template (F1.S2.P5).
-- [ ] Escrever anexos `F1_S1_inventario-13_10_26.md` e `F1_S2_decisoes-13_10_26.md`.
-- [ ] Mover plano antigo `unificacao_template_kit_glpi-12_10_26-10_40.md` para
-  `docs/05_progresso/legados/` (neste ciclo ou quando este plano for aprovado).
+- [x] Decidir se `docs/06_progresso/` do template e mantido ou absorvido. (14/10: absorvido em `05_progresso/historico`)
+- [x] Preencher `docs/01_requisitos` do template (F1.S2.P5). (14/10)
+- [x] Escrever anexos `F1_S1_inventario-13_10_26.md` e `F1_S2_decisoes-13_10_26.md`. (14/10)
+- [x] Mover plano antigo `unificacao_template_kit_glpi-12_10_26-10_40.md` para
+  `docs/05_progresso/legados/`. (13/10)
+- [ ] **Implementar os 5 binarios GLPI** (`glpi-commit-harvest`,
+  `glpi-progress-rollup`, `glpi-node-upsert`, `glpi-phase-ensure`,
+  `glpi-migrate-codes`) — specs prontas nas respectivas skills; plano proprio.
 
 

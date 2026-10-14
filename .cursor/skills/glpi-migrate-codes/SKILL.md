@@ -8,6 +8,12 @@ description: >-
 
 # Skill: glpi-migrate-codes
 
+> **Status do binario:** `tools/glpi/bin/glpi-migrate-codes` ainda **nao
+> existe** (pendencia registrada no plano de unificacao). Esta skill e a
+> especificacao do fluxo. Ate a implementacao, executar manualmente com
+> `glpi-retro-scan` (mapear) + `glpi-retro-apply` (aplicar), com revisao
+> humana do mapa antes de qualquer `--apply`.
+
 Converte a numeracao do modelo antigo (3 niveis) para o novo (4 niveis),
 **sem perder historico**.
 

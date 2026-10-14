@@ -9,6 +9,11 @@ description: >-
 
 # Skill: glpi-phase-ensure
 
+> **Status do binario:** `tools/glpi/bin/glpi-phase-ensure` ainda **nao
+> existe** (pendencia registrada no plano de unificacao). Esta skill e a
+> especificacao do fluxo. Ate a implementacao, executar manualmente com
+> `glpi-seed-phases` (semear fases) + `glpi-tree-validate` (conferir).
+
 Materializa o **primeiro nivel de chamado** (a fase) sob o projeto raiz.
 O operador **nao precisa saber** se a fase sera `Project` filho ou
 `ProjectTask` nivel 1: isso vem de `topology.phase_as` resolvido nas camadas.

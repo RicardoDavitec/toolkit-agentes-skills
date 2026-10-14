@@ -10,6 +10,11 @@ description: >-
 
 # Skill: glpi-node-upsert
 
+> **Status do binario:** `tools/glpi/bin/glpi-node-upsert` ainda **nao
+> existe** (pendencia registrada no plano de unificacao). Esta skill e a
+> especificacao do fluxo. Ate a implementacao, executar manualmente com
+> `glpi-task-upsert` (cria/atualiza ProjectTask por codigo).
+
 Alias legado aceito: `glpi-task-upsert`. O **nivel e inferido do `--code`**:
 
 | `--code` | Nivel | Itemtype | Vinculo do pai |

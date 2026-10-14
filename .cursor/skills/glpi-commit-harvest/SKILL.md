@@ -9,6 +9,11 @@ description: >-
 
 # Skill: glpi-commit-harvest
 
+> **Status do binario:** `tools/glpi/bin/glpi-commit-harvest` ainda **nao
+> existe** (pendencia registrada no plano de unificacao). Esta skill e a
+> especificacao do fluxo. Ate a implementacao, executar manualmente:
+> `git log` (filtros abaixo) + `glpi-followup` para publicar no Ticket.
+
 Especializacao de `glpi-retro-scan` para a fonte **git**. Enquanto o retro-scan
 reconstroi o historico inteiro, esta skill e o **uso diario**: colher o que foi
 commitado desde o ultimo sync e materializar S/P.

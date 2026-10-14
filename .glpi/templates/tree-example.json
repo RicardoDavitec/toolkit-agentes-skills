@@ -1,0 +1,32 @@
+{
+  "tasks": [
+    {
+      "code": "F2",
+      "name": "[F2] Implementacao",
+      "percent_done": 40,
+      "plan_start_date": "2026-10-05",
+      "plan_end_date": "2026-10-30"
+    },
+    {
+      "code": "F2.S1",
+      "name": "[F2.S1] Sessao 05/10 - sync offline",
+      "percent_done": 60,
+      "plan_start_date": "2026-10-05",
+      "plan_end_date": "2026-10-09"
+    },
+    {
+      "code": "F2.S1.P1",
+      "name": "[F2.S1.P1] Fila de sincronizacao",
+      "percent_done": 100,
+      "plan_start_date": "2026-10-05",
+      "plan_end_date": "2026-10-06"
+    },
+    {
+      "code": "F2.S1.P2",
+      "name": "[F2.S1.P2] Retry com backoff",
+      "percent_done": 20,
+      "plan_start_date": "2026-10-07",
+      "plan_end_date": "2026-10-09"
+    }
+  ]
+}

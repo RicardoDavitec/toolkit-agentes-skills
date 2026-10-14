@@ -71,7 +71,7 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 
 ### F1 — Planejamento
 
-- [ ] **F1** Planejamento da unificacao
+- [x] **F1** Planejamento da unificacao (fechado 14/10)
   Aceite: inventario completo, matriz de mapeamento aprovada e decisoes de
   arquitetura registradas antes de qualquer alteracao de codigo.
   <!-- glpi: code="F1" -->
@@ -104,8 +104,8 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       8 agentes entram no template).
       <!-- glpi: code="F1.S1.P4" -->
 
-  - [ ] **F1.S2** Decisoes de arquitetura do template
-    Fechar as escolhas estruturais antes da implementacao. Detalhe:
+  - [x] **F1.S2** Decisoes de arquitetura do template (fechado 14/10)
+    Escolhas estruturais registradas. Detalhe:
     `anexos/F1_S2_decisoes-13_10_26.md`.
     <!-- glpi: code="F1.S2" -->
 
@@ -138,8 +138,8 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       DEPRECATED mantidos. Detalhe: `anexos/F1_S2_decisoes-13_10_26.md`.
       <!-- glpi: code="F1.S2.P4" -->
 
-    - [ ] **F1.S2.P5** Atualizar `docs/01_requisitos`
-      Criterio: requisitos do template registrados (hoje so ha esqueleto).
+    - [x] **F1.S2.P5** Atualizar `docs/01_requisitos` (14/10)
+      RF1..RF10, RNF1..RNF5, criterios de aceite e riscos registrados.
       <!-- glpi: code="F1.S2.P5" -->
 
 ### F2 — Implementacao

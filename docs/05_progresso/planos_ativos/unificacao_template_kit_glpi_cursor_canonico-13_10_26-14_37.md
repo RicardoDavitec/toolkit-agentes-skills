@@ -271,21 +271,23 @@ preencher as janelas (filho contido no pai) — ver pendencias.
   Aceite: validadores verdes e bootstrap/upgrade testados fora de projetos reais.
   <!-- glpi: code="F3" -->
 
-  - [ ] **F3.S1** Validadores automaticos do catalogo
+  - [x] **F3.S1** Validadores automaticos do catalogo (14/10)
     <!-- glpi: code="F3.S1" -->
 
-    - [ ] **F3.S1.P1** Lint de skills e agentes
-      Criterio: falha se houver YAML invalido, chave duplicada, `name` diferente
-      da pasta, arquivo fora do nome `SKILL.md`, marcador de conflito ou
-      segredo. Aplicar em `.cursor/skills` e `.cursor/agents`.
+    - [x] **F3.S1.P1** Lint de skills e agentes (14/10)
+      `scripts/lint_template.py` (permanente): YAML valido, `name` = pasta,
+      description PT-BR, marcador de conflito, segredo real — 0 erros.
+      Correcao: pasta `glpi_seed_phases` renomeada para `glpi-seed-phases`.
       <!-- glpi: code="F3.S1.P1" -->
 
-    - [ ] **F3.S1.P2** Validacao GLPI do plano exemplo
-      Criterio: `glpi-tree-validate` com exit 0 no plano exemplo.
+    - [x] **F3.S1.P2** Validacao GLPI do plano exemplo (14/10)
+      `.glpi/templates/tree-example.json` (payload F/S/P do plano exemplo)
+      validado com `glpi-tree-validate --from ... --strict`: exit 0, 0 erros.
       <!-- glpi: code="F3.S1.P2" -->
 
-    - [ ] **F3.S1.P3** CI no GitHub
-      Criterio: workflow rodando os validadores em cada push/PR.
+    - [x] **F3.S1.P3** CI no GitHub (14/10)
+      `.github/workflows/ci.yml` real no template: lint_template +
+      tree-validate do exemplo em cada push/PR.
       <!-- glpi: code="F3.S1.P3" -->
 
   - [ ] **F3.S2** Bootstrap e upgrade em repositorios descartaveis

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# bootstrap-into.sh — aplica o pmf-dev-kit em um projeto vigente (vendoriza cópia local)
+# bootstrap-into.sh — aplica o toolkit-agentes-skills em um projeto vigente (vendoriza cópia local)
+# Canonico: .cursor/skills + .cursor/agents; .github/skills vira symlink.
 set -euo pipefail
 
 KIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -146,25 +147,51 @@ rsync -a --exclude 'retro-scans/*.json' --exclude 'retro-scans/*.md' \
 
 install_skill() {
   local name="$1"
-  copy_tree "$KIT_ROOT/.github/skills/$name" "$TARGET/.github/skills/$name"
+  copy_tree "$KIT_ROOT/.cursor/skills/$name" "$TARGET/.cursor/skills/$name"
+}
+
+install_agents() {
+  mkdir -p "$TARGET/.cursor/agents"
+  rsync -a "$KIT_ROOT/.cursor/agents/" "$TARGET/.cursor/agents/"
+}
+
+ensure_skills_link() {
+  local link="$TARGET/.github/skills"
+  mkdir -p "$TARGET/.github"
+  if [[ -d "$link" && ! -L "$link" ]]; then
+    echo "Aviso: .github/skills existe como diretorio; movendo itens ausentes para .cursor/skills"
+    local item name
+    for item in "$link"/*; do
+      [[ -e "$item" ]] || continue
+      name="$(basename "$item")"
+      [[ -e "$TARGET/.cursor/skills/$name" ]] || cp -a "$item" "$TARGET/.cursor/skills/$name"
+    done
+    rm -rf "$link"
+  fi
+  [[ -L "$link" ]] || ln -s ../.cursor/skills "$link"
+  echo ".github/skills -> ../.cursor/skills (symlink)"
 }
 
 case "$PROFILE" in
   glpi-only)
     for s in acompanhar-chamado glpi-followup glpi-task-upsert glpi-project-create glpi-retro-scan \
+             glpi-tree-validate glpi-document-attach glpi-node-upsert glpi-phase-ensure \
              documente-o-plano atualizar-kit; do
       install_skill "$s"
     done
+    install_agents
+    ensure_skills_link
     ;;
   pmf-core|full-skeleton)
-    for s in commit documentar documente-o-plano exporte importe atualizar atualizar-kit backup \
-             encerrar-sessao oncoto-oncovo acompanhar-chamado glpi-followup glpi-task-upsert \
-             glpi-project-create glpi-retro-scan; do
-      install_skill "$s"
-    done
-    cp "$KIT_ROOT/.github/skills/GUIA_USO_SKILLS.md" "$TARGET/.github/skills/GUIA_USO_SKILLS.md"
-    mkdir -p "$TARGET/docs/05_progresso/geral" "$TARGET/docs/05_progresso/infra"
-    rsync -a "$KIT_ROOT/docs/05_progresso/" "$TARGET/docs/05_progresso/"
+    rsync -a --exclude 'config/' "$KIT_ROOT/.cursor/skills/" "$TARGET/.cursor/skills/"
+    copy_tree "$KIT_ROOT/.cursor/skills/config" "$TARGET/.cursor/skills/config"
+    install_agents
+    ensure_skills_link
+    mkdir -p "$TARGET/docs/05_progresso/geral" "$TARGET/docs/05_progresso/planos_ativos/anexos" \
+             "$TARGET/docs/05_progresso/legados" "$TARGET/docs/05_progresso/pendencias" \
+             "$TARGET/docs/05_progresso/historico"
+    rsync -a --include='*/' --include='*.example' --include='README.md' --include='FLUXO_COMMIT_CHECKLIST.md' --exclude='*' \
+      "$KIT_ROOT/docs/05_progresso/" "$TARGET/docs/05_progresso/"
     if [[ ! -f "$TARGET/docs/05_progresso/geral/PLANO_IMPLEMENTACAO.md" ]]; then
       cp "$KIT_ROOT/docs/05_progresso/geral/PLANO_IMPLEMENTACAO.md.example" \
          "$TARGET/docs/05_progresso/geral/PLANO_IMPLEMENTACAO.md.example"
@@ -180,7 +207,7 @@ esac
 mkdir -p "$TARGET/scripts"
 cat >"$TARGET/scripts/atualizar-kit" <<WRAP
 #!/usr/bin/env bash
-# Wrapper local — delega ao pmf-dev-kit.
+# Wrapper local — delega ao toolkit-agentes-skills.
 set -euo pipefail
 KIT="${KIT_ROOT}"
 TARGET="\$(cd "\$(dirname "\${BASH_SOURCE[0]}")/.." && pwd)"
@@ -189,7 +216,7 @@ WRAP
 chmod +x "$TARGET/scripts/atualizar-kit"
 mkdir -p "$TARGET/.glpi"
 if [[ ! -f "$TARGET/.glpi/kit.yaml" ]]; then
-  printf '# Caminho do repositorio fonte pmf-dev-kit\npath: %s\n' "$KIT_ROOT" \
+  printf '# Caminho do repositorio fonte toolkit-agentes-skills\npath: %s\n' "$KIT_ROOT" \
     >"$TARGET/.glpi/kit.yaml"
 fi
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""atualizar_kit.py — verifica updates no pmf-dev-kit e sincroniza no produto.
+"""atualizar_kit.py — verifica updates no toolkit-agentes-skills e sincroniza no produto.
 
 Uso tipico (a partir do kit ou via wrapper do produto):
   python3 scripts/atualizar_kit.py --target=/path/produto --check-only
@@ -72,7 +72,7 @@ def resolve_kit(explicit: str | None, target: Path, script_file: Path) -> Path |
     candidates: list[Path] = []
     if explicit:
         candidates.append(Path(explicit).expanduser().resolve())
-    for key in ("PMF_DEV_KIT", "PMF_KIT_ROOT"):
+    for key in ("TOOLKIT_KIT", "TOOLKIT_ROOT", "PMF_DEV_KIT", "PMF_KIT_ROOT"):
         if os.environ.get(key):
             candidates.append(Path(os.environ[key]).expanduser().resolve())
     yaml_path = read_kit_path_from_yaml(target)
@@ -82,6 +82,9 @@ def resolve_kit(explicit: str | None, target: Path, script_file: Path) -> Path |
     kit_from_script = script_file.resolve().parent.parent
     if (kit_from_script / "scripts" / "upgrade-into.sh").is_file():
         candidates.append(kit_from_script)
+    candidates.append((target / ".." / "toolkit-agentes-skills").resolve())
+    candidates.append((Path.home() / "projetos" / "toolkit-agentes-skills").resolve())
+    # fallback legado: instalacoes antigas do pmf-dev-kit
     candidates.append((target / ".." / "pmf-dev-kit").resolve())
     candidates.append((Path.home() / "projetos" / "pmf-dev-kit").resolve())
 
@@ -111,7 +114,7 @@ def ensure_product_wrapper(kit: Path, target: Path) -> Path:
     scripts.mkdir(parents=True, exist_ok=True)
     wrapper = scripts / "atualizar-kit"
     body = f"""#!/usr/bin/env bash
-# Wrapper local — delega ao pmf-dev-kit (nao editar logica aqui).
+# Wrapper local — delega ao toolkit-agentes-skills (nao editar logica aqui).
 set -euo pipefail
 KIT="{kit}"
 TARGET="$(cd "$(dirname "${{BASH_SOURCE[0]}}")/.." && pwd)"
@@ -125,7 +128,7 @@ exec python3 "$KIT/scripts/atualizar_kit.py" --kit="$KIT" --target="$TARGET" "$@
     glpi = target / ".glpi"
     glpi.mkdir(parents=True, exist_ok=True)
     kit_yaml = glpi / "kit.yaml"
-    desired = f"# Caminho do repositorio fonte pmf-dev-kit (sync via scripts/atualizar-kit)\npath: {kit}\n"
+    desired = f"# Caminho do repositorio fonte toolkit-agentes-skills (sync via scripts/atualizar-kit)\npath: {kit}\n"
     if not kit_yaml.is_file() or "path:" not in kit_yaml.read_text(encoding="utf-8", errors="replace"):
         kit_yaml.write_text(desired, encoding="utf-8")
     return wrapper
@@ -214,10 +217,10 @@ def target_status(target: Path) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="Verifica updates no pmf-dev-kit e sincroniza no repositorio produto."
+        description="Verifica updates no toolkit-agentes-skills e sincroniza no repositorio produto."
     )
     ap.add_argument("--target", default="", help="Raiz do produto (default: git toplevel / cwd)")
-    ap.add_argument("--kit", default="", help="Raiz do pmf-dev-kit")
+    ap.add_argument("--kit", default="", help="Raiz do toolkit-agentes-skills")
     ap.add_argument(
         "--profile",
         default="",
@@ -235,7 +238,7 @@ def main() -> int:
     kit = resolve_kit(args.kit or None, target, script_file)
     if kit is None:
         print(
-            "erro: pmf-dev-kit nao encontrado. Use --kit=PATH ou export PMF_DEV_KIT=...",
+            "erro: toolkit-agentes-skills nao encontrado. Use --kit=PATH ou export TOOLKIT_KIT=...",
             file=sys.stderr,
         )
         return 1

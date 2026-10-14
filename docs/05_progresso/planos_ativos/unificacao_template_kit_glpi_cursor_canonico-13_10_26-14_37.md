@@ -144,7 +144,7 @@ preencher as janelas (filho contido no pai) — ver pendencias.
 
 ### F2 — Implementacao
 
-- [ ] **F2** Implementacao da unificacao no template
+- [x] **F2** Implementacao da unificacao no template (fechado 14/10)
   Aceite: template unico com catalogo F/S/P longo em `.cursor/`, PT-BR, sem
   duplicacao.
   <!-- glpi: code="F2" -->
@@ -238,26 +238,31 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       scripts em `.cursor/skills`).
       <!-- glpi: code="F2.S3.P3" -->
 
-  - [ ] **F2.S4** Kit de inicializacao de projetos (.cursor)
+  - [x] **F2.S4** Kit de inicializacao de projetos (.cursor) (14/10)
     Fluxo unico para criar e atualizar projetos a partir do template.
     <!-- glpi: code="F2.S4" -->
 
-    - [ ] **F2.S4.P1** Scripts de bootstrap e upgrade
-      Criterio: `bootstrap-into.sh` e `upgrade-into.sh` (ou equivalentes)
-      copiando para `.cursor/skills` e `.cursor/agents`, criando o symlink
-      `.github/skills -> ../.cursor/skills`, com dry-run, backup e camada do
-      produto preservada. Skill `atualizar-kit` passa a apontar para
-      `toolkit-agentes-skills` como fonte.
+    - [x] **F2.S4.P1** Scripts de bootstrap e upgrade (14/10)
+      `bootstrap-into.sh`: instala de `.cursor/skills` + `.cursor/agents`,
+      cria symlink `.github/skills`. `upgrade-into.sh`: sync **granular**
+      (item a item — `rsync --delete` nunca apaga skill/agente de produto),
+      `ensure_cursor_canonico` migra `.github/skills` legado (move extras
+      para `.cursor/skills`, cria symlink, remove `.github/agents` Copilot).
+      `atualizar_kit.py`: resolve `toolkit-agentes-skills` (`TOOLKIT_KIT`),
+      fallback `pmf-dev-kit`. Sintaxe bash/python validada.
       <!-- glpi: code="F2.S4.P1" -->
 
-    - [ ] **F2.S4.P2** Esqueleto de docs e planos
-      Criterio: arvore decidida no F1.S2.P2, `planos_ativos/README.md`,
-      template de plano exemplo F/S/P.
+    - [x] **F2.S4.P2** Esqueleto de docs e planos (14/10)
+      Arvore do F1.S2.P2 presente (`05_progresso/{planos_ativos,geral,
+      legados,pendencias,historico}` + `06_glpi`); `planos_ativos/README.md`;
+      template de plano exemplo em `.glpi/templates/template-example.md`;
+      exemplos `PLANO_IMPLEMENTACAO.md.example` e
+      `CHECKLIST_PENDENCIAS.md.example` semeados no bootstrap.
       <!-- glpi: code="F2.S4.P2" -->
 
-    - [ ] **F2.S4.P3** `AGENTS.md` modelo
-      Criterio: modelo generico com padrao de commit, regras de resposta e
-      ponteiros para o catalogo em `.cursor/`.
+    - [x] **F2.S4.P3** `AGENTS.md` modelo (14/10)
+      `AGENTS.md.example` reescrito: fonte unica `.cursor`, agentes do kit,
+      padrao de commit + gate de plano, modelo F/S/P, docs, segredos.
       <!-- glpi: code="F2.S4.P3" -->
 
 ### F3 — Testes internos

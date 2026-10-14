@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  upgrade-into.sh — atualiza o kit GLPI dentro de um clone de produto
-#  Repositorio fonte: API-VSCode-GLPI (pmf-dev-kit)
+#  Repositorio fonte: toolkit-agentes-skills (unifica pmf-dev-kit + template hexagonal)
 #
 #  MODELO DE PROPRIEDADE DE ARQUIVO (file ownership)
 #    A = K ∪ P ∪ S          com a invariante    K ∩ P = ∅
@@ -57,11 +57,12 @@ die()   { err "$*"; exit "${2:-1}"; }
 # =============================================================================
 
 # --- K : KIT-OWNED --- sempre sobrescrito (diretorios terminam com "/") ------
+# NOTA (v2, canonico .cursor): skills e agentes NAO entram aqui como
+# diretorio — o sync granular (sync_dir_granular) copia item a item para
+# NUNCA apagar skills/agentes de produto com o rsync --delete.
 readonly -a KIT_OWNED=(
   # CLI e wrappers
   "tools/glpi/"
-  # Skills dos agentes (Cursor / Copilot / Gemini / Antigravity)
-  ".github/skills/"
   # Contrato base do modelo (camada 1)
   ".glpi/model.defaults.yaml"
   # Templates canonicos do kit
@@ -92,7 +93,7 @@ readonly -a KIT_OWNED=(
   "scripts/lib/"
   ".glpi/agenda.yaml.example"
   ".glpi/templates/quadro-semanal.xlsx"
-  # (tools/glpi/ e .github/skills/ ja cobrem o script e as skills)
+  # (tools/glpi/ cobre o script; skills/agentes entram via sync granular)
 )
 
 # --- P : PRODUCT-OWNED --- nunca sobrescrito --------------------------------
@@ -137,6 +138,10 @@ readonly -a SEED_MAP=(
   "docs/05_progresso/legados/.gitkeep|__TOUCH__"
   "docs/05_progresso/pendencias/.gitkeep|__TOUCH__"
 )
+
+# --- Diretorios com sync GRANULAR (item a item; preserva extras do produto)
+readonly KIT_SKILLS_DIR=".cursor/skills"
+readonly KIT_AGENTS_DIR=".cursor/agents"
 
 # --- Skills v1 que viram alias DEPRECATED (nunca apagar) --------------------
 readonly -a DEPRECATED_SKILLS=(
@@ -443,6 +448,69 @@ sync_kit_owned() {
 }
 
 # =============================================================================
+#  8b. SYNC GRANULAR — skills e agentes (item a item; preserva produto)
+# =============================================================================
+sync_dir_granular() {
+  local rel_dir="$1"
+  local src_dir="${SOURCE_DIR}/${rel_dir}"
+  [[ -d "$src_dir" ]] || { vrb "kit sem ${rel_dir} (ignorado)"; return 0; }
+  step "Sync granular: ${rel_dir}/ (item a item; extras do produto preservados)"
+  local item name
+  for item in "${src_dir}"/*; do
+    name="$(basename -- "$item")"
+    copy_item "${rel_dir}/${name}"
+  done
+}
+
+# Migra .github/skills (copia legada) para o modelo canonico:
+#  1) itens que so existem em .github/skills sao movidos para .cursor/skills
+#     (skills de produto nao podem se perder);
+#  2) o diretorio vira symlink -> ../.cursor/skills;
+#  3) .github/agents (Copilot, descontinuado) e removido apos aviso
+#     (o backup padrao deste script ja cobre).
+ensure_cursor_canonico() {
+  step "Canonico .cursor — migracao de .github/skills e .github/agents"
+  local gh_skills="${TARGET_DIR}/.github/skills"
+  local gh_agents="${TARGET_DIR}/.github/agents"
+  local cur_skills="${TARGET_DIR}/${KIT_SKILLS_DIR}"
+
+  mkdir -p "$cur_skills"
+
+  if [[ -d "$gh_skills" && ! -L "$gh_skills" ]]; then
+    local item name
+    for item in "${gh_skills}"/*; do
+      [[ -e "$item" ]] || continue
+      name="$(basename -- "$item")"
+      [[ "$name" == "GUIA_USO_SKILLS.md" || "$name" == "REMOTOS_ESPELHO.md" || "$name" == *.md ]] && continue
+      if [[ ! -e "${cur_skills}/${name}" ]]; then
+        if (( APPLY )); then
+          cp -a -- "$item" "${cur_skills}/${name}"
+        fi
+        printf '  %smigrate%s   .github/skills/%s -> %s/%s\n' "$C_CYN" "$C_RST" "$name" "$KIT_SKILLS_DIR" "$name"
+      fi
+    done
+    if (( APPLY )); then
+      rm -rf -- "$gh_skills"
+      ln -s ../.cursor/skills "$gh_skills" || die "Falha ao criar symlink .github/skills" 9
+    else
+      printf '  %ssymlink%s   .github/skills -> ../.cursor/skills (dry-run)\n' "$C_YEL" "$C_RST"
+    fi
+  elif [[ -L "$gh_skills" ]]; then
+    vrb ".github/skills ja e symlink"
+  fi
+
+  if [[ -d "$gh_agents" && ! -L "$gh_agents" ]]; then
+    warn ".github/agents (formato Copilot) esta DESCONTINUADO neste kit"
+    if (( APPLY )); then
+      rm -rf -- "$gh_agents"
+      ok ".github/agents removido (conteudo no backup .glpi/.backups se habilitado)"
+    else
+      printf '  %sremove%s    .github/agents/ (dry-run)\n' "$C_YEL" "$C_RST"
+    fi
+  fi
+}
+
+# =============================================================================
 #  9. PRESERVACAO (P) — relatorio, nenhuma escrita
 # =============================================================================
 report_product_owned() {
@@ -553,7 +621,7 @@ seed_missing() {
 # 11. DEPRECIACAO (stubs de alias) — nunca apaga
 # =============================================================================
 write_deprecated_skill() {
-  local old="$1" new="$2" dir="${TARGET_DIR}/.github/skills/${old}"
+  local old="$1" new="$2" dir="${TARGET_DIR}/${KIT_SKILLS_DIR}/${old}"
   mkdir -p "$dir"
   cat > "${dir}/SKILL.md" <<EOF
 ---
@@ -568,7 +636,7 @@ description: "DEPRECATED alias de ${new}. Redireciona para a skill primaria; nao
 Preferir **\`${new}\`**.
 
 Se esta skill for acionada pelo nome legado, carregar e seguir **integralmente**
-[\`.github/skills/${new}/SKILL.md\`](../${new}/SKILL.md).
+[\`.cursor/skills/${new}/SKILL.md\`](../${new}/SKILL.md).
 
 Motivo: o modelo passou de 3 niveis (Projeto -> S -> P) para 4 niveis
 (Projeto -> **F** -> S -> P), com as 5 fases
@@ -585,7 +653,7 @@ mark_deprecations() {
   for pair in "${DEPRECATED_SKILLS[@]}"; do
     old="${pair%%|*}"; new="${pair##*|}"
     if (( APPLY == 0 )); then
-      printf '  %sdeprecate%s  .github/skills/%s -> %s\n' "$C_YEL" "$C_RST" "$old" "$new"
+      printf '  %sdeprecate%s  %s/%s -> %s\n' "$C_YEL" "$C_RST" "$KIT_SKILLS_DIR" "$old" "$new"
     else
       write_deprecated_skill "$old" "$new"
       vrb "stub DEPRECATED: ${old} -> ${new}"
@@ -790,7 +858,7 @@ stamp_version() {
   mkdir -p "${TARGET_DIR}/.glpi"
   {
     printf '%s\n' "$SCRIPT_VERSION"
-    printf '# kit: API-VSCode-GLPI (pmf-dev-kit)\n'
+    printf '# kit: toolkit-agentes-skills\n'
     printf '# preset: %s\n' "$PRESET"
     printf '# schema: %s\n' "$SCHEMA_TARGET"
     printf '# upgraded_at: %s\n' "$(date -Iseconds)"
@@ -851,8 +919,9 @@ post_validate() {
     ".glpi/model.defaults.yaml"
     ".glpi/templates/lifecycle-5-phases.yaml"
     ".glpi/presets/${PRESET}"
-    ".github/skills/glpi-node-upsert/SKILL.md"
-    ".github/skills/glpi-phase-ensure/SKILL.md"
+    ".cursor/skills/glpi-node-upsert/SKILL.md"
+    ".cursor/skills/glpi-phase-ensure/SKILL.md"
+    ".cursor/agents/glpi-orquestrador.md"
   )
   local m fail=0
   for m in "${must[@]}"; do
@@ -991,6 +1060,9 @@ main() {
   # --- fase 3: escrita ---
   make_backup
   sync_kit_owned
+  sync_dir_granular "$KIT_SKILLS_DIR"
+  sync_dir_granular "$KIT_AGENTS_DIR"
+  ensure_cursor_canonico
   report_product_owned
   seed_missing
   mark_deprecations

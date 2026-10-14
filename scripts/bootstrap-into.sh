@@ -224,7 +224,7 @@ fi
 
 if [[ "$PROFILE" == "full-skeleton" ]]; then
   for d in 00_visao_geral 01_requisitos 02_arquitetura 03_implementacao 04_operacao \
-           07_doc_academica 08_imagens 09_dados_e_tabelas; do
+           07_doc_academica 08_imagens 09_dados_e_tabelas 10_setup 11_ia; do
     mkdir -p "$TARGET/docs/$d"
     rsync -a "$KIT_ROOT/docs/$d/" "$TARGET/docs/$d/"
   done

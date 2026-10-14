@@ -407,6 +407,9 @@ preencher as janelas (filho contido no pai) — ver pendencias.
   projetos GLPI (SIGMA, SIGTI, SIGLM, DevOps, Desenvolvimento Próprio) ficam
   de fora até haver plano, sessão ou commit deles neste workspace.
 - [x] Decidir se `docs/06_progresso/` do template e mantido ou absorvido. (14/10: absorvido em `05_progresso/historico`)
+- [x] Arvore `docs/` em 12 pastas `00_visao_geral` … `11_ia`, com underscore. (14/10)
+  Duplicatas com hifen no Bot_Pan mescladas. `06_progresso` da Barra_Factory
+  absorvido em `05_progresso/historico`. Template so com README e exemplos.
 - [x] Preencher `docs/01_requisitos` do template (F1.S2.P5). (14/10)
 - [x] Escrever anexos `F1_S1_inventario-13_10_26.md` e `F1_S2_decisoes-13_10_26.md`. (14/10)
 - [x] Mover plano antigo `unificacao_template_kit_glpi-12_10_26-10_40.md` para

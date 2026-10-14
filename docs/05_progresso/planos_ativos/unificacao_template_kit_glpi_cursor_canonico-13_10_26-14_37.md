@@ -154,14 +154,15 @@ preencher as janelas (filho contido no pai) — ver pendencias.
     historico e resolvendo conflitos **arquivo a arquivo**.
     <!-- glpi: code="F2.S1" -->
 
-    - [ ] **F2.S1.P1** Branch de integracao e importacao
-      Criterio: branch `integracao/api-vscode-glpi` com o historico importado.
+    - [x] **F2.S1.P1** Branch de integracao e importacao (14/10)
+      Branch `integracao/api-vscode-glpi`; `git subtree add
+      --prefix=_import/kit-glpi` do commit `f83ff4f` do API-VScode-GLPI.
       <!-- glpi: code="F2.S1.P1" -->
 
-    - [ ] **F2.S1.P2** Resolucao manual de conflitos
-      Criterio: zero marcadores de conflito; nenhum arquivo com duas versoes
-      concatenadas. Antes do commit de merge, rodar `rg -n` com padrao de
-      marcadores e lint de YAML das skills sem erro.
+    - [x] **F2.S1.P2** Resolucao manual de conflitos (14/10)
+      Subtree em prefixo novo: sem conflitos de merge. Fusoes editoriais
+      (backup, documentar, encerrar-sessao) feitas a mao no F2.S2.P2, um
+      arquivo por vez. Gate: `rg` de marcadores + lint YAML antes do merge.
       <!-- glpi: code="F2.S1.P2" -->
 
     - [ ] **F2.S1.P3** CLI e configuracao GLPI sem segredos
@@ -174,21 +175,21 @@ preencher as janelas (filho contido no pai) — ver pendencias.
     Reescrever o catalogo conforme a matriz do F1.S1.P4.
     <!-- glpi: code="F2.S2" -->
 
-    - [ ] **F2.S2.P1** Skills na versao longa F/S/P
-      Criterio: um unico cabecalho YAML valido por `SKILL.md`; `name` igual ao
-      nome da pasta; arquivo sempre `SKILL.md` (nunca `Skill.md`).
+    - [x] **F2.S2.P1** Skills na versao longa F/S/P (14/10)
+      `.cursor/skills/` criado; 9 do template + 25 do kit movidas; um YAML
+      valido por `SKILL.md`; `name` = pasta.
       <!-- glpi: code="F2.S2.P1" -->
 
-    - [ ] **F2.S2.P2** Fundir skills sobrepostas
-      Criterio: pares resolvidos sem perder funcionalidade. Pares principais:
-      `encerrar-sessao` (template x kit), `documentar-sessao` x `documentar`,
-      `backup-projeto` x `backup`, `atualizar` x `sincronize`/`exporte`/`importe`.
+    - [x] **F2.S2.P2** Fundir skills sobrepostas (14/10)
+      Fundidos: `encerrar-sessao` (kit + checklist do template),
+      `backup` (kit + `backup-projeto` c/ `backup_projeto.py`),
+      `documentar` (kit + `documentar-sessao` c/ `gerar_resumo_sessao.py`).
+      Decisao: `atualizar` e `sincronize` **mantidas distintas** (atualizar =
+      um remote; sincronize = equalizar origin+github no mesmo SHA).
       <!-- glpi: code="F2.S2.P2" -->
 
-    - [ ] **F2.S2.P3** Importar skill `sincronize` dos consumidores
-      Criterio: skill `sincronize` presente em Bot_Pan, samu-operacional e
-      `~/.cursor/skills` mas ausente no `API-VScode-GLPI`; integrar ao
-      catalogo canonico do template.
+    - [x] **F2.S2.P3** Importar skill `sincronize` dos consumidores (14/10)
+      Copiada de `~/.cursor/skills/sincronize` para `.cursor/skills/sincronize`.
       <!-- glpi: code="F2.S2.P3" -->
 
     - [ ] **F2.S2.P4** Binarios GLPI faltantes

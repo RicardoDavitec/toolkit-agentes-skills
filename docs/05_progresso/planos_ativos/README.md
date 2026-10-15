@@ -3,7 +3,8 @@
 Somente o plano vigente e os anexos dele. Planos encerrados, substituidos ou
 rascunhos vao para `docs/05_progresso/legados/`.
 
-Padrao: F = fase · S = sessao/sprint/semana · P = tarefa (~2h, ancorada em commit).
+Padrao: C = chamado ITIL · R = projeto/requisicao · F = fase ·
+S = sessao/sprint/semana · P = tarefa (~2h, ancorada em commit).
 Fases fixas: F1 Planejamento · F2 Implementacao · F3 Testes Internos ·
 F4 Homologacao · F5 Aprovacao.
 
@@ -11,19 +12,16 @@ F4 Homologacao · F5 Aprovacao.
 
 | Plano | Fase atual | Estado |
 |-------|------------|--------|
-| [unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md](./unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md) | F5 | Aceito `v1.0.0`; F4.S1.P3 aberto |
+| [espelhamento_chamado_itil_crfsp-15_10_26-13_45.md](./espelhamento_chamado_itil_crfsp-15_10_26-13_45.md) | F1 | Planejado |
 
 ## Anexos
 
-- [F1_S1_diagnostico-12_10_26.md](./anexos/F1_S1_diagnostico-12_10_26.md)
-- [F1_S2_decisoes_arquitetura-12_10_26.md](./anexos/F1_S2_decisoes_arquitetura-12_10_26.md)
-- [F1_S1_inventario-13_10_26.md](./anexos/F1_S1_inventario-13_10_26.md)
-- [F1_S2_decisoes-13_10_26.md](./anexos/F1_S2_decisoes-13_10_26.md)
-- [F5_S1_termo_aceite-14_10_26.md](./anexos/F5_S1_termo_aceite-14_10_26.md)
+- [C1_R1_F1_S1_levantamento_e_decisoes-15_10_26.md](./anexos/C1_R1_F1_S1_levantamento_e_decisoes-15_10_26.md)
 
 ## Legados
 
-- [unificacao_template_kit_glpi-12_10_26-10_40.md](../legados/unificacao_template_kit_glpi-12_10_26-10_40.md) — substituido pelo plano vigente (13/10).
+- [unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md](../legados/unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md) — aceito em 14/10 (`v1.0.0`); anexos em `legados/anexos/`.
+- [unificacao_template_kit_glpi-12_10_26-10_40.md](../legados/unificacao_template_kit_glpi-12_10_26-10_40.md) — substituido em 13/10.
 
 ## Marcadores
 

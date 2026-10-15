@@ -33,4 +33,4 @@ repositorios. O `API-VScode-GLPI` permanece como historico.
 ## Aceite
 
 F5 e F5.S1 ficam `[A]`. `accept_ref` deste termo:
-`docs/05_progresso/planos_ativos/anexos/F5_S1_termo_aceite-14_10_26.md`.
+`docs/05_progresso/legados/anexos/F5_S1_termo_aceite-14_10_26.md`.

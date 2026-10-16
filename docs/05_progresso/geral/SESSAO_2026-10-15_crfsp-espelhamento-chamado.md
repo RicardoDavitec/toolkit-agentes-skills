@@ -1,5 +1,9 @@
 # Sessao 2026-10-15 — Plano C/R/F/S/P e espelhamento no chamado ITIL
 
+> **Chamado ITIL (C):** 15817 (producao)
+> **Projeto/Requisicao (R):** 12 - "GEP - Botao de Panico - 0. [PAI]"
+> **Piloto:** Bot_Pan | **Data:** 15/10/2026
+
 ## Sumario executivo
 
 Investigado o chamado 15817 (Botao do Panico) em producao, so leitura.
@@ -25,7 +29,7 @@ plano de unificacao, aceito em 14/10, foi para `legados/` com os anexos.
 - O perfil da API nao le modelos nem categorias de tarefa. Os ids vao no
   catalogo, informados a mao.
 - O catalogo do `glpi-tree-validate` tem duas regras V23. A renumeracao
-  entrou no plano (C1.R1.F2.S1.P3).
+  entrou no plano (F2.S1.P3).
 
 ## Decisoes
 
@@ -39,6 +43,6 @@ plano de unificacao, aceito em 14/10, foi para `legados/` com os anexos.
 
 ## Proximas acoes
 
-- C1.R1.F1.S2.P2: responder as pendencias do anexo (fases dos modelos
+- F1.S2.P2: responder as pendencias do anexo (fases dos modelos
   genericos, padrao de F1, GEP 7 em F4, C/R do toolkit, ids GLPI).
-- C1.R1.F1.S2.P1: requisitos RF11–RF13 e RNF6.
+- F1.S2.P1: requisitos RF11–RF13 e RNF6.

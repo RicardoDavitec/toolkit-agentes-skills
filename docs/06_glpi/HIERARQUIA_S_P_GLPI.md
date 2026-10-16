@@ -1,7 +1,12 @@
 # Hierarquia plano ↔ GLPI (S / P / átomo)
 
-> Convenção do **pmf-dev-kit**: **S** = fase (pai) · **P** = pacote ~2h (filho) · **átomo** = evidência só no `content`.  
-> Data: 23/07/2026.
+> **Chamado ITIL (C):** 15817 (producao)
+> **Projeto/Requisicao (R):** 12 - "GEP - Botao de Panico - 0. [PAI]"
+> **Piloto:** Bot_Pan | **Data:** 23/07/2026
+
+C e R aparecem só neste cabeçalho. O corpo usa F/S/P (e o código histórico `S4` / `S4.P1` deste guia). No GLPI, C e R entram por id (`tickets_id`, `projects_id`, vínculo `Itil_Project`), nunca como prefixo no texto da tarefa.
+
+> Convenção do **pmf-dev-kit**: **S** = fase (pai) · **P** = pacote ~2h (filho) · **átomo** = evidência só no `content`.
 
 Exemplos de código (`S4`, Project 72) vêm do produto histórico SIGS-Samu; adapte ao `project_id` e ao plano do seu produto.
 

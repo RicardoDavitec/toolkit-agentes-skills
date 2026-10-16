@@ -1,5 +1,9 @@
 # F1.S1 — Levantamento e decisoes (15/10/2026)
 
+> **Chamado ITIL (C):** 15817 (producao)
+> **Projeto/Requisicao (R):** 12 - "GEP - Botao de Panico - 0. [PAI]"
+> **Piloto:** Bot_Pan | **Data:** 15/10/2026
+
 > Plano: [`espelhamento_chamado_itil_crfsp-15_10_26-13_45.md`](../espelhamento_chamado_itil_crfsp-15_10_26-13_45.md)
 
 ## 1. Evidencia lida no GLPI de producao (15/10, 11:42–11:55)

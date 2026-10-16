@@ -17,6 +17,20 @@ Planos Markdown para humanos **e** agentes, alinhados a `docs/01_requisitos`
 O plano e a fonte de verdade do que **vai** acontecer (`todo`); os commits sao a
 fonte do que **aconteceu** (`done`). As duas se encontram no mesmo code.
 
+C (chamado ITIL) e R (projeto/requisicao) entram **uma vez**, no cabecalho,
+somente quando o documento pertence a um chamado e a um projeto ja conhecidos.
+Itens usam `**F#.S#**` e `**F#.S#.P#**`. Comentario `glpi: code=` usa o mesmo
+code relativo. No GLPI, C e R vao por id (`tickets_id`, `projects_id`,
+`Itil_Project`), nunca no texto. Skill: `convencao-codigos-glpi`.
+
+~~~text
+> **Chamado ITIL (C):** 15817 (producao)
+> **Projeto/Requisicao (R):** 12 - "GEP - Botao de Panico - 0. [PAI]"
+> **Piloto:** Bot_Pan | **Data:** DD/MM/AAAA
+~~~
+
+Troque os ids pelos do documento. Sem chamado definido, omita as tres linhas.
+
 ## Linha de producao
 
 `docs/05_progresso/planos_ativos/` contem **só** o plano vigente + os anexos

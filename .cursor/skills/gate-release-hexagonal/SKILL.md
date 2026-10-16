@@ -16,7 +16,8 @@ user-invocable: true
 2. Validar contratos de portas e adaptadores.
 3. Revisar risco operacional e rollback.
 4. Confirmar atualizacao de documentacao essencial.
-5. Emitir status: aprovado, aprovado com ressalvas, reprovado.
+5. Verificacao de codigos (nao altera parsers): `python .github/skills/convencao-codigos-glpi/scripts/checar_prefixo.py`.
+6. Emitir status: aprovado, aprovado com ressalvas, reprovado.
 
 ## Criterio de Conclusao
 - Decisao de release registrada com evidencias tecnicas.

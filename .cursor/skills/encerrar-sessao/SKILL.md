@@ -32,6 +32,7 @@ Fecha a sessao do dia com registro objetivo em `docs/05_progresso/geral/`.
    - Apply: mesmo comando com `--apply` (somente com confirmacao).
    - Opcional: acompanhamento via skill `acompanhar-chamado` apontando o arquivo/sha.
 8. Perguntar sobre backup; se sim, carregar skill `backup` e executar.
+9. Verificacao (nao altera o plano): `python .github/skills/convencao-codigos-glpi/scripts/checar_prefixo.py`. Exit 1 indica prefixo `C#.R#` fora do cabecalho.
 
 ## Script de apoio (opcional)
 

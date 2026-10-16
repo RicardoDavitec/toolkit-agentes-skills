@@ -354,7 +354,7 @@ preencher as janelas (filho contido no pai) — ver pendencias.
       Follow-up **nao enviado**: a skill `acompanhar-chamado` exige
       confirmacao do titulo, e o chamado aberto nao e deste upgrade.
       `encerrar-sessao` fica para o fechamento do dia.
-      Transferido em 15/10 para `C1.R1.F4.S1.P4` do plano
+      Transferido em 15/10 para `F4.S1.P4` (plano de 15/10)
       `espelhamento_chamado_itil_crfsp-15_10_26-13_45.md` (follow-up no
       chamado de homologacao criado para o espelhamento).
       <!-- glpi: code="F4.S1.P3" -->

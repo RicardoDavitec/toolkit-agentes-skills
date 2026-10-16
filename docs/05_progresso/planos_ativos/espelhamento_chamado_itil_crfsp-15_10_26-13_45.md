@@ -20,7 +20,7 @@ ja esta ligado ao projeto 12 (`Itil_Project` 74), mas o planejamento futuro
 nao aparece no chamado: o projeto 12 tem zero `ProjectTask`, e as 12 tarefas
 do chamado foram criadas a mao, para teste. O kit hoje so escreve
 acompanhamento (`ITILFollowup`) no chamado e `ProjectTask` no projeto.
-Detalhe: `anexos/C1_R1_F1_S1_levantamento_e_decisoes-15_10_26.md`.
+Detalhe: `anexos/F1_S1_levantamento_e_decisoes-15_10_26.md`.
 
 ## Requisitos de negocio (vinculo)
 
@@ -79,7 +79,7 @@ Pacote = 2 h (estimativa padrao do kit).
   - [~] **C1.R1.F1.S1** Levantamento e decisoes (15/10)
     Leitura do chamado 15817 e do projeto 12; mapa dos campos da tarefa de
     chamado; decisoes D1–D10; rascunho do catalogo.
-    Detalhe: `anexos/C1_R1_F1_S1_levantamento_e_decisoes-15_10_26.md`.
+    Detalhe: `anexos/F1_S1_levantamento_e_decisoes-15_10_26.md`.
     <!-- glpi: code="C1.R1.F1.S1" plan_start="2026-10-15T11:30:00-03:00" plan_end="2026-10-15T19:30:00-03:00" real_start="2026-10-15T11:42:00-03:00" -->
 
     - [x] **C1.R1.F1.S1.P1** Investigar o chamado 15817 e o projeto 12 (15/10)

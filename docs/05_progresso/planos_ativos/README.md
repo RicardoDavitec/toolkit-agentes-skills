@@ -16,7 +16,7 @@ F4 Homologacao · F5 Aprovacao.
 
 ## Anexos
 
-- [C1_R1_F1_S1_levantamento_e_decisoes-15_10_26.md](./anexos/C1_R1_F1_S1_levantamento_e_decisoes-15_10_26.md)
+- [F1_S1_levantamento_e_decisoes-15_10_26.md](./anexos/F1_S1_levantamento_e_decisoes-15_10_26.md)
 
 ## Legados
 

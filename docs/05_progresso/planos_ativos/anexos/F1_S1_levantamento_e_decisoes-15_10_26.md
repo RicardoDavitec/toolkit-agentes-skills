@@ -1,4 +1,4 @@
-# C1.R1.F1.S1 — Levantamento e decisoes (15/10/2026)
+# F1.S1 — Levantamento e decisoes (15/10/2026)
 
 > Plano: [`espelhamento_chamado_itil_crfsp-15_10_26-13_45.md`](../espelhamento_chamado_itil_crfsp-15_10_26-13_45.md)
 
@@ -31,7 +31,7 @@ marcador de code. O usuario as substitui por tarefas reais.
 | Categoria | `taskcategories_id` | atributo `categoria` do P ou padrao do R |
 | Status Informacao / A fazer / Feito | `state` 0 / 1 / 2 | marcador do P |
 | Privado | `is_private` | `mirror.private` (padrao 0) |
-| Base de conhecimento | campo do formulario — nome na API a confirmar (C1.R1.F2.S3.P3) | padrao falso |
+| Base de conhecimento | campo do formulario — nome na API a confirmar (F2.S3.P3) | padrao falso |
 | Duracao `##h##` | `actiontime` (s) | `hours` do P (padrao 2 h) |
 | Usuario / Grupo | `users_id_tech` / `groups_id_tech` | `mirror.user` / `mirror.group_id` |
 | Data inicial / Periodo | `begin` / `end` | `plan_start` / `plan_end` do P |
@@ -47,8 +47,9 @@ marcador de code. O usuario as substitui por tarefas reais.
 - **D1 — Hierarquia C/R/F/S/P.** C = chamado ITIL de origem (`Ticket`).
   R = projeto/requisicao (`Project`, ligado ao C por `Itil_Project`).
   F/S/P seguem como hoje. Um C pode ter varios R.
-- **D2 — Code longo.** `C<n>.R<n>.F<n>.S<n>.P<n>`, com C e R **ordinais locais**
-  do repositorio. Os ids GLPI ficam em `.glpi/project.yaml`, por ambiente
+- **D2 — REVOGADA em 16/10/2026.** O code longo `C1.R1.F2.S1.P1` deixa de
+  valer em itens, titulos, comentarios `glpi: code=` e nomes de arquivo.
+  Os ids GLPI continuam em `.glpi/project.yaml`, por ambiente
   (o chamado de homologacao tem outro id):
 
   ```yaml
@@ -58,8 +59,9 @@ marcador de code. O usuario as substitui por tarefas reais.
     R1: { chamado: C1, prod: 12, homolog: 12 }
   ```
 
-  A forma curta `F2.S1.P3` continua valida quando o repositorio tem um so
-  C e um so R (assume `C1.R1`). Os planos existentes nao precisam migrar.
+- **D-novo:** C e R somente no cabecalho. Codes e itens usam F#.S#.P#.
+  Vinculo com C e R no GLPI por IDs (tickets_id, projects_id, Itil_Project).
+  A TicketTask leva o code curto no texto visivel. Sem parse de titulo.
 - **D3 — Origem obrigatoria.** Todo R precisa de um C. Regra nova no
   validate e pergunta obrigatoria no `bootstrap-into.sh`.
 - **D4 — Escopo do espelho.** So P em andamento (`[~]`, `[t]`) ou futuros
@@ -68,9 +70,9 @@ marcador de code. O usuario as substitui por tarefas reais.
 - **D5 — Sentido unico.** Plano → TicketTask. Se a tarefa foi editada no GLPI
   depois do ultimo espelho (`users_id_editor` diferente do usuario da API ou
   `date_mod` maior que o registrado), o script nao sobrescreve e relata.
-- **D6 — Identidade.** Prefixo visivel `[C1.R1.F2.S1.P3]` no inicio do
-  `content` mais o indice `.glpi/index.json`. O comentario `glpi-meta` vai
-  junto; se o editor do GLPI o remover, vale o prefixo.
+- **D6 — REVOGADA em 16/10/2026.** O prefixo longo `[C1.R1.F2.S1.P3]` nao e
+  mais usado no `content` nem no comentario. A identidade da TicketTask e o
+  code curto `F2.S1.P3` no texto visivel, mais o indice `.glpi/index.json`.
 - **D7 — Sem exclusao.** P removido do plano vira "Informacao" (0) com
   `[cancelado]`. Excluir permanentemente fica so na tela.
 - **D8 — Homologacao primeiro.** Chamado novo em `suporte-homolog`, ligado
@@ -83,7 +85,7 @@ marcador de code. O usuario as substitui por tarefas reais.
 - **D10 — Elegibilidade por fase.** O validate recusa modelo fora das fases
   listadas. GEP 7 vai em F5 (na PMF, "Producao"); `fases` e editavel.
 
-## 4. Rascunho do catalogo (implementar em C1.R1.F2.S2)
+## 4. Rascunho do catalogo (implementar em F2.S2)
 
 ```yaml
 schema: 1
@@ -116,7 +118,7 @@ Os `glpi_id` ficam nulos ate alguem com leitura de `TaskTemplate` e
 `TaskCategory` os informar (o perfil da API recebe 403). Com id nulo, o
 script grava sem modelo/categoria e avisa.
 
-## 5. A confirmar com o usuario (C1.R1.F1.S2.P2)
+## 5. A confirmar com o usuario (F1.S2.P2)
 
 - Fases dos modelos genericos (Limpeza, Teste de Componentes, Backup,
   Formatar): o rascunho deixa todos em todas as fases (`"*"`).
@@ -130,5 +132,5 @@ script grava sem modelo/categoria e avisa.
 ## 6. Achado lateral
 
 O catalogo do `glpi-tree-validate` tem duas regras **V23** (datas/duracoes e
-horas por sessao). A de datas/duracoes passa a V31 em C1.R1.F2.S1.P3. As
+horas por sessao). A de datas/duracoes passa a V31 em F2.S1.P3. As
 regras novas deste plano usam V32 em diante.

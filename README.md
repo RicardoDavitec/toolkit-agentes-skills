@@ -10,8 +10,9 @@ via API REST (qualquer instancia) e fluxo de documentacao **F/S/P**
 
 ## Conteudo
 
-- `.cursor/skills/`: **catalogo canonico** de skills (33) — operacao git,
-  sessao, backup, GLPI e fluxo hexagonal.
+- `.cursor/skills/`: **catalogo canonico** de skills — operacao git,
+  sessao, backup, GLPI e fluxo hexagonal. Convenção de códigos:
+  `convencao-codigos-glpi` (C e R só no cabeçalho; itens em `F#.S#.P#`).
 - `.cursor/agents/`: **catalogo canonico** de agentes (8) — 4 GLPI
   (`glpi-orquestrador`, `glpi-auditor`, `glpi-migrador`, `glpi-escriba`) +
   4 hexagonais.

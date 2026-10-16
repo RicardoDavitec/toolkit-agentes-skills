@@ -56,7 +56,7 @@ Padrao atual de backup:
 | Git/remoto | `commit`, `exporte` (push), `importe` (pull), `atualizar` (sincronizar 1 remote), `sincronize` (equalizar origin+github) |
 | Sessao/docs | `documentar`, `documente-o-plano`, `encerrar-sessao`, `oncoto-oncovo`, `planeje-a-semana`, `inserir-pendencia` |
 | Backup/kit | `backup`, `atualizar-kit` |
-| GLPI | `acompanhar-chamado`, `glpi-document-attach`, `glpi-retro-scan`, `glpi-tree-validate`, `glpi-backlog-export`, `glpi-commit-harvest`*, `glpi-progress-rollup`*, `glpi-node-upsert`*, `glpi-phase-ensure`*, `glpi-migrate-codes`* |
+| GLPI | `convencao-codigos-glpi`, `acompanhar-chamado`, `glpi-document-attach`, `glpi-retro-scan`, `glpi-tree-validate`, `glpi-backlog-export`, `glpi-commit-harvest`*, `glpi-progress-rollup`*, `glpi-node-upsert`*, `glpi-phase-ensure`*, `glpi-migrate-codes`* |
 | Aliases DEPRECATED | `glpi-followup` (=acompanhar-chamado), `glpi-project-create`, `glpi-task-upsert` (=glpi-node-upsert), `glpi_seed_phases` (=glpi-phase-ensure) |
 | Hexagonal | `fluxo-orquestrado-hexagonal`, `guardrails-hexagonal`, `checar-contratos-portas`, `revisar-casos-de-uso`, `operacao-planilha-segura`, `gate-release-hexagonal` |
 

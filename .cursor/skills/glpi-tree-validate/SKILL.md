@@ -32,7 +32,7 @@ ou o **estado remoto** no GLPI.
 | V03 | Sem orfaos: todo S tem F; todo P tem S | erro |
 | V04 | `plan_start(filho) >= plan_start(pai)` e `plan_end(filho) <= plan_end(pai)` | erro |
 | V05 | `plan_start <= plan_end` e `real_start <= real_end` | erro |
-| V23 | `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration` presentes | aviso (erro com `--strict`) |
+| V23 | `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration` presentes em F, S e P | aviso (erro com `--strict`) |
 | V06 | Coerencia estado x datas x percentual (`state_rules`) | erro |
 | V07 | Pai `done`/`closed` só se **todos** os filhos `done`/`closed` | erro |
 | V08 | `percent_done` do pai == rollup ponderado (tol. `tolerance_pp`) | aviso |
@@ -58,6 +58,8 @@ ou o **estado remoto** no GLPI.
 | V28 | `hours` ausente em P (impede rollup ponderado) | aviso |
 | V29 | Anexo referenciado inexistente no disco | erro |
 | V30 | `accept_ref` apontando para arquivo ausente | erro |
+
+Na gravacao, F, S e P levam os quatro campos de V23. No realizado, a duracao efetiva vem do plano ou do git. No planejado, as duas datas planejadas sao obrigatorias e a duracao efetiva e 0. O validador lista a lacuna como aviso; com `--strict`, vira erro.
 
 ## Severidades e efeito
 

@@ -796,6 +796,10 @@ cmd_project_create() {
     | putn("projectstates_id"; $state)
     ')"
 
+  if [[ -z "$parent" && -n "$name" && "$name" != "GEP - "* ]]; then
+    name="GEP - ${name}"
+    input="$(echo "$input" | jq --arg name "$name" '.name = $name')"
+  fi
   if ! echo "$input" | jq -e '.name|type=="string" and length>0' >/dev/null; then
     die "project create exige --name="
   fi

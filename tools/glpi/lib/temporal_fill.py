@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
 """Preenche janela e esforço de ProjectTask no GLPI.
 
-Campos: plan_start_date, plan_end_date, planned_duration, effective_duration.
-A data é a janela de calendário. A duração é o esforço, em segundos.
+Campos obrigatórios: plan_start_date, plan_end_date, planned_duration,
+effective_duration. A data é a janela. A duração é o esforço, em segundos.
 
-Estimativa quando não há timesheet (modelo do kit):
-- folha (pacote): 2 h
-- fase sem filhos: 8 h
-- fase com filhos: soma dos filhos
-
-Duração efetiva:
-- percent_done 0: 0
-- percent_done 100: igual à planejada
-- no meio: proporcional, com piso de 30 min
-- fase: soma dos filhos
+Ordem da evidência no realizado: real_start/real_end já gravados (plano ou
+git). A duração efetiva é esse intervalo, em segundos, inclusive quando passa
+de um dia. Se as duas datas reais são o mesmo instante, a efetiva fica 0.
+Sem datas reais: esforço da janela planejada (pacote sem data = 2 h).
+Planejado (percentual 0): duração efetiva 0.
 
 Não sobrescreve data já gravada nem duração já > 0.
 Dry-run por padrão. --apply grava no GLPI de produção (ou --env=homolog).
@@ -89,8 +84,19 @@ def build_patches(tasks: list[dict]) -> list[dict]:
         is_leaf = int(task.get("projecttasks_id") or 0) in by_id
         effort = LEAF_SECONDS if is_leaf else PHASE_EMPTY_SECONDS
         planned[task_id] = effort
+        real_start = parse_dt(task.get("real_start_date"))
+        real_end = parse_dt(task.get("real_end_date"))
+        plan_start = parse_dt(task.get("plan_start_date"))
+        plan_end = parse_dt(task.get("plan_end_date"))
+        span = 0
+        if real_start and real_end and real_end >= real_start:
+            span = int((real_end - real_start).total_seconds())
+        if plan_start and plan_end and plan_end > plan_start:
+            effort = int((plan_end - plan_start).total_seconds())
         if percent <= 0:
             effective[task_id] = 0
+        elif span > 0 or (real_start and real_end):
+            effective[task_id] = span
         elif percent >= 100:
             effective[task_id] = effort
         else:

@@ -14,6 +14,10 @@ description: >-
 Manter o GLPI como **espelho fiel** do repositorio, sem deixar a arvore
 F/S/P em estado parcial. Nenhuma skill aplica isoladamente sob este agente.
 
+O Project raiz no preset PMF leva o prefixo `GEP - ` (`naming.root`: `GEP - {produto} - 0. [PAI]`). Fase, sessão e tarefa não recebem esse prefixo.
+
+Em F, S e P, gravar sempre `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration`. No realizado, a duração efetiva e as datas saem do plano ou do `git log`. No planejado, início e fim planejados são obrigatórios (data do plano ou data estipulada na criação) e a duração efetiva fica `0`.
+
 ## Modelo mental obrigatorio
 
 ```text

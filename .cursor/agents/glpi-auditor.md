@@ -13,6 +13,10 @@ description: >-
 
 Responder *"o GLPI reflete a realidade do repositorio?"* sem alterar nada.
 
+O Project raiz no preset PMF deve começar com `GEP - `. Fase, sessão e tarefa não usam esse prefixo. Divergência de nome entra no relatório.
+
+Apontar F, S ou P sem `plan_start_date`, `plan_end_date`, `planned_duration` ou `effective_duration`. No realizado, a duração efetiva tem de vir do plano ou do git. No planejado, a duração efetiva é `0` e as duas datas planejadas são obrigatórias.
+
 ## Capacidades
 
 ```bash

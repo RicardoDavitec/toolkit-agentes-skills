@@ -100,6 +100,19 @@ retro-scan  ->  revisar JSON (humano)  ->  glpi-tree-validate --from=JSON
           ->  acompanhar-chamado --code=... (registro institucional)
 ~~~
 
+## Datas e durações (obrigatório em F, S e P)
+
+Todo nível gravado no GLPI leva os quatro campos, em segundos nas durações:
+
+| Campo GLPI | Realizado (feito ou em andamento) | Planejado (ainda não feito) |
+|------------|-----------------------------------|-----------------------------|
+| `plan_start_date` | janela do plano ou, se faltar, o dia do primeiro commit | data do plano ou data estipulada na criação |
+| `plan_end_date` | janela do plano ou o último commit | data do plano ou data estipulada na criação |
+| `planned_duration` | intervalo entre as datas planejadas, em segundos (2 h só se a data foi estipulada na criação) | idem |
+| `effective_duration` | intervalo real dos commits ou dos `real_*` do plano; 0 se for um instante | `0` |
+
+A fase e a sessão recebem a soma das durações dos filhos e a janela que os cobre. Fonte real, nesta ordem: comentário `glpi:` do plano, depois `git log` do repositório. Não inventar `real_*` sem commit ou sem data do plano.
+
 ## Regras
 
 - **Nunca aplica nada.** Só produz artefato revisavel.

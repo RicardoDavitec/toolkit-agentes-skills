@@ -37,6 +37,10 @@ ainda não existe; quando existir, segue esta skill.
 
 No GLPI, C e R existem como ids (`tickets_id`, `projects_id`, `Itil_Project`), não como texto do código.
 
+## Nome do projeto raiz (R)
+
+No preset PMF (`api-vscode-glpi`), o Project raiz leva o prefixo `GEP - ` na frente do nome do produto. O molde em `naming.root` é `GEP - {produto} - 0. [PAI]`. Subprojeto de fase não recebe esse prefixo. `glpi project create` sem `--parent-project` aplica `GEP - ` quando o nome ainda não começa assim.
+
 ## Cabeçalho único
 
 Só em documento que pertença a um chamado e a um projeto já conhecidos. Modelo do piloto Bot_Pan:

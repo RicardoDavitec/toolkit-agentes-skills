@@ -10,10 +10,59 @@ import json
 import os
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Alinhado ao teto do retro_scan (GLPI_RETRO_CONTENT_MAX)
 CONTENT_MAX = int(os.environ.get("GLPI_RETRO_CONTENT_MAX", "4000"))
+EFFORT_SECONDS = 2 * 3600
+DAY_BUCKET = 8 * 3600
+
+
+def _parse_ts(value) -> datetime | None:
+    if not value:
+        return None
+    text = str(value).strip()[:19]
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def temporal_duration_args(c: dict) -> list[str]:
+    """Duração planejada e efetiva, em segundos.
+
+    A planejada é o intervalo entre as datas planejadas. Sem essas datas, fica 2 h.
+    A efetiva do realizado é o intervalo real (0 se o commit for um instante).
+    A efetiva do planejado é 0.
+    """
+    g = c.get("suggested_glpi") or {}
+
+    def pick(key: str):
+        return g.get(key) or c.get(key)
+
+    plan_start = _parse_ts(pick("plan_start"))
+    plan_end = _parse_ts(pick("plan_end"))
+    real_start = _parse_ts(pick("real_start"))
+    real_end = _parse_ts(pick("real_end"))
+    status = str(c.get("status") or "").lower()
+    try:
+        percent = int(c.get("percent_done") if c.get("percent_done") is not None else g.get("percent_done") or 0)
+    except (TypeError, ValueError):
+        percent = 0
+    realized = status in ("done", "archived", "partial") or percent > 0
+    planned = EFFORT_SECONDS
+    if plan_start and plan_end and plan_end > plan_start:
+        planned = int((plan_end - plan_start).total_seconds())
+    if not realized:
+        effective = 0
+    elif real_start and real_end and real_end >= real_start:
+        effective = int((real_end - real_start).total_seconds())
+    else:
+        effective = 0
+    return [f"--planned-duration={planned}", f"--effective-duration={effective}"]
 
 
 def sort_for_apply(cands: list[dict]) -> list[dict]:
@@ -65,6 +114,7 @@ def build_upsert_args(c: dict, apply: bool) -> list[str] | None:
         if val:
             # CLI aceita YYYY-MM-DD
             args.append(f"{flag}={str(val)[:19]}")
+    args.extend(temporal_duration_args(c))
     if apply:
         args.append("--apply")
     return args

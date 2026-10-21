@@ -14,6 +14,10 @@ description: >-
 Converter produto de 3 niveis (Projeto → S → P) para 4 niveis
 (Projeto → **F** → S → P) sem perder historico.
 
+Ao criar ou renomear o Project raiz no preset PMF, o nome leva o prefixo `GEP - ` (`naming.root`: `GEP - {produto} - 0. [PAI]`). Fase, sessão e tarefa não recebem esse prefixo.
+
+Não migrar F, S ou P sem `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration`. No realizado, a duração efetiva vem do plano ou do git. No planejado, a duração efetiva fica `0`.
+
 ## A ambiguidade central (explicar SEMPRE ao usuario)
 
 ```text

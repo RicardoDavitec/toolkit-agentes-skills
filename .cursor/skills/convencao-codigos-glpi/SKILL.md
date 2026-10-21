@@ -7,8 +7,8 @@ description: >-
 
 # Skill: convencao-codigos-glpi
 
-Fonte única da convenção de códigos do kit. O espelho `glpi-ticket-mirror`
-ainda não existe; quando existir, segue esta skill.
+Fonte única da convenção de códigos do kit. O espelho `glpi ticket-mirror`
+grava no chamado pai só a tarefa em andamento ou futura, com o código curto.
 
 ## Regra normativa
 

@@ -41,6 +41,10 @@ O sufixo `_pack` **nao sobrescreve** o artefato anterior.
 | P (~2h) | `ProjectTask` | itens `- [ ]` dos planos + commits individuais |
 | Atomo | só `content` | bullets internos, arquivos tocados |
 
+C (chamado) e R (projeto) não saem como item. O relatório só registra os ids
+do cabeçalho. Um título antigo `## R1` ou um código `S0` não vira projeto nem
+fase. O validador aceita só `F#`, `F#.S#` e `F#.S#.P#`.
+
 ## Inferencia de fase (precedencia decrescente)
 
 1. **Code explicito** — `### F2.S4 …` ou `<!-- glpi: code="F2.S4" -->`.
@@ -111,7 +115,7 @@ Todo nível gravado no GLPI leva os quatro campos, em segundos nas durações:
 | `planned_duration` | intervalo entre as datas planejadas, em segundos (2 h só se a data foi estipulada na criação) | idem |
 | `effective_duration` | intervalo real dos commits ou dos `real_*` do plano; 0 se for um instante | `0` |
 
-A fase e a sessão recebem a soma das durações dos filhos e a janela que os cobre. Fonte real, nesta ordem: comentário `glpi:` do plano, depois `git log` do repositório. Não inventar `real_*` sem commit ou sem data do plano.
+A fase e a sessão recebem a janela que cobre os filhos. A duração planejada é o tamanho dessa janela, em segundos, e a efetiva é o intervalo real dos filhos (0 se não houver). Fonte real, nesta ordem: comentário `glpi:` do plano, depois `git log` do repositório. Não inventar `real_*` sem commit ou sem data do plano. O `retro-scan` completa a lacuna por `tools/glpi/lib/crfsp.py`.
 
 ## Regras
 

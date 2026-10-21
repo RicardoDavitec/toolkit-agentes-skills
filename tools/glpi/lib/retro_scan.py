@@ -51,8 +51,8 @@ GLPI_ATTR_RE = re.compile(
 )
 # Bot_Pan / planos genéricos (sem heading SAMU "Fase N (S4)")
 CHECKBOX_WITH_CODE_RE = re.compile(
-    r"^\s*[-*]\s*\[([ xX~])\]\s+(?:\*\*)?"
-    r"([A-Za-z]?\d+(?:\.\d+)*(?:\.[a-z])?|[RUP]\d+(?:\.\d+)?)"
+    r"^\s*[-*]\s*\[([ xX~tT])\]\s+(?:\*\*)?"
+    r"(F\d+\.S\d+(?:\.P\d+)?|[A-Za-z]?\d+(?:\.\d+)*(?:\.[a-z])?|[RUP]\d+(?:\.\d+)?)"
     r"\*\*\s+(.+)$",
     re.IGNORECASE,
 )
@@ -283,7 +283,7 @@ def _extract_item_code(cell: str) -> str | None:
         return None
     m = re.match(
         r"^(?:\*\*)?"
-        r"([A-Za-z]?\d+(?:\.\d+)*(?:\.[a-z])?|[RUP]\d+(?:\.\d+)?)"
+        r"(F\d+\.S\d+(?:\.P\d+)?|[A-Za-z]?\d+(?:\.\d+)*(?:\.[a-z])?|[RUP]\d+(?:\.\d+)?)"
         r"(?:\*\*)?(?:\s|$|[—\-–:])",
         cell,
         re.IGNORECASE,
@@ -293,6 +293,12 @@ def _extract_item_code(cell: str) -> str | None:
 
 def _parent_code_from_item(code: str, current_phase: str | None) -> str | None:
     code = (code or "").upper()
+    task = re.match(r"^(F\d+\.S\d+)\.P\d+$", code)
+    if task:
+        return task.group(1)
+    session = re.match(r"^(F\d+)\.S\d+$", code)
+    if session:
+        return session.group(1)
     for pat in (r"^(R\d+)\.", r"^(P\d+)\."):
         m = re.match(pat, code)
         if m:
@@ -1005,9 +1011,9 @@ def scan_commits(
             if sm:
                 raw = sm.group(1).upper()
                 if re.match(r"^S\d+$", raw):
-                    kind = "phase"
+                    kind = "item"
                     code = raw
-                    title = f"{raw} (evidencia commit)"
+                    title = f"{raw} (codigo antigo; nao e fase)"
                 else:
                     parent_m = re.match(r"^(S\d+)", raw)
                     parent = parent_m.group(1) if parent_m else None
@@ -1072,7 +1078,7 @@ def scan_branches(repo_path: Path, repo_id: str) -> list[dict]:
         if sm:
             c = sm.group(1).upper()
             if re.match(r"^S\d+$", c):
-                kind = "phase"
+                kind = "item"
                 code = c
             else:
                 parent_m = re.match(r"^(S\d+)", c)
@@ -2180,7 +2186,7 @@ def _finalize_candidate_actions(
 
 def main() -> int:
     ap = argparse.ArgumentParser(
-        description="Retro-scan hierarquico S/P. Com --pack: Fase→Pacote~2h→atomos no content."
+        description="Retro-scan C/R/F/S/P. C e R so no cabecalho. Fases F1-F5, sessoes e tarefas."
     )
     ap.add_argument("--workspace", required=True)
     ap.add_argument("--repo-root", required=True)
@@ -2247,6 +2253,13 @@ def main() -> int:
     enrich_phase_dates_from_children(cands)
     nullify_real_dates_by_state(cands)
 
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from crfsp import ensure_fsp, load_glpi_ids
+
+    glpi_ids = load_glpi_ids(repo_root)
+    if not project_id:
+        project_id = glpi_ids.get("project_id") or ""
+
     atoms_audit: list[dict] = []
     pack_meta: dict | None = None
     if pack_mode:
@@ -2262,6 +2275,7 @@ def main() -> int:
         existing_names=existing_names,
         existing_codes=existing_codes,
     )
+    cands, legacy_r = ensure_fsp(cands, repo_root)
 
     stamp = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d_%H%M")
     bundle = ws.get("bundle", "workspace")
@@ -2272,9 +2286,12 @@ def main() -> int:
     phases = [c for c in cands if c.get("kind") == "phase"]
     items = [c for c in cands if c.get("kind") != "phase"]
     hierarchy = {
-        "phase_S": "ProjectTask pai (fase / modulo)",
-        "item_P": "ProjectTask filho — pacote ~2h" if pack_mode else "ProjectTask filho (projecttasks_id)",
-        "atom": "Evidencia no content do pacote (nao e ProjectTask)" if pack_mode else None,
+        "C": "Chamado ITIL, so id no cabecalho",
+        "R": "Projeto ligado por Itil_Project, so id no cabecalho",
+        "F": "Subprojeto de fase F1-F5",
+        "S": "ProjectTask sessao",
+        "P": "ProjectTask tarefa",
+        "atom": "Evidencia no content (nao e nivel)" if pack_mode else None,
     }
     if not pack_mode:
         hierarchy.pop("atom", None)
@@ -2283,6 +2300,8 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(),
         "bundle": bundle,
         "project_id": project_id,
+        "ticket_id": glpi_ids.get("ticket_id") or "",
+        "legacy_r_skipped": len(legacy_r),
         "hierarchy": hierarchy,
         "mode": "APPLY" if args.apply else "DRY-RUN",
         "pack": pack_meta or {"mode": "off"},
@@ -2301,16 +2320,17 @@ def main() -> int:
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
     hier_label = (
-        "**S = fase** · **P = pacote ~2h** · átomos só no content"
-        if pack_mode
-        else "**S = tarefa pai** · **P = subtarefa filho**"
+        "**C e R só no cabeçalho** · **F = fase** · **S = sessão** · **P = tarefa**"
+        + (" · átomos no content" if pack_mode else "")
     )
     lines = [
         f"# Retro-scan GLPI hierárquico — {bundle}" + (" (pack)" if pack_mode else ""),
         "",
         f"- Gerado: `{report['generated_at']}`",
-        f"- Projeto GLPI: `{project_id}`",
+        f"- Chamado ITIL (C): `{glpi_ids.get('ticket_id') or '—'}` (só no cabeçalho)",
+        f"- Projeto (R): `{project_id or '—'}` ligado por Itil_Project",
         f"- Hierarquia: {hier_label}",
+        f"- Codigos fora de F/S/P ignorados: {len(legacy_r)}",
         f"- Modo: **{report['mode']}**",
         f"- Pack: **{(pack_meta or {}).get('mode', 'off')}**"
         + (
@@ -2320,8 +2340,8 @@ def main() -> int:
             if pack_meta
             else ""
         ),
-        f"- Total apply: {report['total']} (fases S={report['phases']}, "
-        f"{'pacotes' if pack_mode else 'itens'} P={report['items']}; "
+        f"- Total apply: {report['total']} (fases F={report['phases']}, "
+        f"sessoes e tarefas={report['items']}; "
         f"NEW={report['new']}, SKIP={report['skip']})",
         "",
         "| Acao | Kind | Level | Code | Parent | Modulo | Atomos | Min | Titulo | Status | % | Plan ini | Real fim |",
@@ -2348,9 +2368,9 @@ def main() -> int:
         [
             "",
             "## Ordem sugerida de apply",
-            "1. Criar/atualizar **fases** (`kind=phase`, `--code=S4` ou `M.BACKEND`)",
-            "2. Criar/atualizar **pacotes** (`kind=item`, `--code=S4.P1 --parent-code=S4`)"
-            + (" — átomos já estão no `content`" if pack_mode else ""),
+            "1. Criar/atualizar **fases** (`kind=phase`, `--code=F2`)",
+            "2. Criar/atualizar **sessoes e tarefas** (`kind=item`, `--code=F2.S1.P1 --parent-code=F2.S1`)"
+            + (" — atomos ja estao no `content`" if pack_mode else ""),
             "",
             "```bash",
             f"./tools/glpi/bin/glpi-retro-apply --from={json_path}",

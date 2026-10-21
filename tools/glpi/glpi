@@ -26,7 +26,10 @@ Comandos:
   project get [id]         Obtem projeto GLPI
   project tasks [id]       Lista ProjectTasks do projeto
   project create [opcoes] [--apply]
-                           Cria Project GLPI (dry-run por padrao)
+                           Cria Project GLPI (dry-run por padrao).
+                           Sem pai, o nome segue GEP - {produto} - 0. [PAI]
+  ticket-mirror [--apply] [--env=homolog] [--from=JSON]
+                           Espelha P em andamento e futuros no chamado pai
   task get <id>            Obtem ProjectTask
   task create|patch|upsert [opcoes] [--apply]
                            ProjectTask (dry-run por padrao)
@@ -34,9 +37,9 @@ Comandos:
                            Seed ProjectTasks (pais S0–S7 ou template corporativo)
   retro-scan [--workspace=PATH] [--pack|--no-pack]
              [--pack-target-min=120] [--pack-gap-min=45]
-                           Levantamento S(fase)/P(pacote~2h); gera JSON/MD
+                           Levantamento F/S/P; C e R so no cabecalho; gera JSON/MD
   retro-apply --from=JSON [--apply] [--kinds=phase,item] [--limit=N]
-                           Aplica candidatos do scan em ordem fase→pacote
+                           Aplica candidatos do scan em ordem fase, sessao, tarefa
   states discover [--apply] [--preset=NOME] [--out=ARQUIVO]
                            Descobre ProjectState via API e gera maps/states.json
   document attach --file=PATH [--itemtype=Ticket|ProjectTask|Project]
@@ -796,8 +799,8 @@ cmd_project_create() {
     | putn("projectstates_id"; $state)
     ')"
 
-  if [[ -z "$parent" && -n "$name" && "$name" != "GEP - "* ]]; then
-    name="GEP - ${name}"
+  if [[ -z "$parent" && -n "$name" ]]; then
+    name="$(python3 "${SCRIPT_DIR}/lib/crfsp.py" --format-root-name "$name")"
     input="$(echo "$input" | jq --arg name "$name" '.name = $name')"
   fi
   if ! echo "$input" | jq -e '.name|type=="string" and length>0' >/dev/null; then
@@ -869,7 +872,7 @@ cmd_retro_scan() {
       -h|--help)
         echo "Uso: glpi retro-scan [--workspace=.glpi/workspace.yaml] [--pack|--no-pack]"
         echo "  [--pack-target-min=120] [--pack-gap-min=45]"
-        echo "  Gera JSON/MD. Com --pack: Fase(S) → Pacote(P ~2h) → atomos no content."
+        echo "  Gera JSON/MD. C e R so no cabecalho. Fases F1-F5, sessoes e tarefas."
         echo "  Para gravar no GLPI: glpi retro-apply --from=JSON [--apply]"
         return 0
         ;;
@@ -983,6 +986,9 @@ main() {
       ;;
     seed-phases) cmd_seed_phases "$@" ;;
     retro-scan) cmd_retro_scan "$@" ;;
+    ticket-mirror)
+      exec python3 "${SCRIPT_DIR}/lib/ticket_mirror.py" "$@"
+      ;;
     retro-apply) cmd_retro_apply "$@" ;;
     states)
       local sub="${1:-}"

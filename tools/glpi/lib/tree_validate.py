@@ -15,7 +15,7 @@ Suporta:
 - --strict, --only, --skip, --quiet, --format=json|text|md
 """
 
-CODE_RE = re.compile(r"^[A-Z0-9]+(?:\.[A-Z0-9]+){0,2}$")
+CODE_RE = re.compile(r"^F\d+(?:\.S\d+(?:\.P\d+)?)?$")
 
 
 def eprint(msg):

@@ -7,6 +7,7 @@ Compatível com **qualquer instância GLPI**; preset default **`api-vscode-glpi`
 
 | Documento | Conteúdo |
 |-----------|----------|
+| **[`GUIA_USO_INTEGRACAO_VSCODE_GLPI.md`](GUIA_USO_INTEGRACAO_VSCODE_GLPI.md)** | Roteiro: projeto novo ou projeto em andamento até a manutenção diária |
 | **[`MANUAL_INTEGRACAO_GLPI.md`](MANUAL_INTEGRACAO_GLPI.md)** | Passo a passo + presets + assistentes |
 | [`MANUAL_USO_GLPI.md`](MANUAL_USO_GLPI.md) | CLI, configs, skills, troubleshooting |
 | [`INTEGRACAO_GLPI_GESTAO_PROJETOS.md`](INTEGRACAO_GLPI_GESTAO_PROJETOS.md) | Visão de gestão |

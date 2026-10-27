@@ -104,6 +104,8 @@ def build_upsert_args(c: dict, apply: bool) -> list[str] | None:
     g = c.get("suggested_glpi") or {}
     name = (g.get("name") or c.get("title") or "").strip()
     code = (g.get("code") or c.get("code") or "").strip()
+    if code and not name.startswith(f"[{code}]"):
+        name = f"[{code}] {name}"[:255]
     if not name:
         return None
     # códigos instáveis (S4.P?) — upsert só por name

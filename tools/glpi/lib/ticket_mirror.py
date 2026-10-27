@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Espelha pacotes em andamento e futuros como TicketTask do chamado pai.
 
+Entram tarefas F#.S#.P# e sessoes F#.S# que nao tem tarefa filha.
 Dry-run por padrão. Produção só grava com --confirm-prod.
 Não apaga tarefa. Se o código já está no texto, não grava de novo.
 """
@@ -95,16 +96,27 @@ def from_markdown(plans: Path) -> list[dict]:
 
 def from_report(path: Path) -> list[dict]:
     report = json.loads(path.read_text(encoding="utf-8"))
+    cands = list(report.get("candidates") or [])
+    parents_with_p = {
+        str(c.get("parent_code") or "").upper()
+        for c in cands
+        if re.fullmatch(r"F\d+\.S\d+\.P\d+", str(c.get("code") or ""), re.I)
+    }
     items = []
-    for cand in report.get("candidates") or []:
+    for cand in cands:
         code = str(cand.get("code") or "")
-        if not re.fullmatch(r"F\d+\.S\d+\.P\d+", code, re.I):
+        is_task = re.fullmatch(r"F\d+\.S\d+\.P\d+", code, re.I)
+        is_session = re.fullmatch(r"F\d+\.S\d+", code, re.I)
+        if not is_task and not (is_session and code.upper() not in parents_with_p):
+            continue
+        status = cand.get("status") or cand.get("status_local")
+        if is_session and not status:
             continue
         items.append(
             {
                 "code": code.upper(),
                 "title": cand.get("title") or code,
-                "status": cand.get("status") or cand.get("status_local") or "pending",
+                "status": status or "pending",
                 "plan_start": cand.get("plan_start"),
                 "plan_end": cand.get("plan_end"),
                 "source": str(path),

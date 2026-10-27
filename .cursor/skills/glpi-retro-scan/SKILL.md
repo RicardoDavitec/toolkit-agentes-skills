@@ -77,6 +77,11 @@ para auditoria. `--min-confidence=0.7` rebaixa a `?` tudo abaixo do limiar.
 `plan_start`/`plan_end` = limites da janela;
 `real_start`/`real_end` = primeiro/ultimo commit efetivo da janela.
 
+**Nome da sessão (obrigatório):** sugestivo da finalidade dos P filhos e
+sempre no escopo da fase (`Planejamento — …`, `Implementação — …`, etc.).
+Proibido gravar só o código (`F1.S1`, `[F1.S1] F1.S1`). O `crfsp.enrich_session_titles`
+monta o título a partir dos pacotes quando o plano não trouxe nome humano.
+
 ## Multi-repo e deduplicacao
 
 `role` e `weight` de `workspace.yaml`:

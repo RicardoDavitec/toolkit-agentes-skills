@@ -29,11 +29,42 @@ PHASES = (
 )
 PHASE_CODES = {code for code, _title in PHASES}
 PHASE_TITLES = dict(PHASES)
+PHASE_SCOPE = {
+    "F1": "Planejamento",
+    "F2": "Implementação",
+    "F3": "Testes Internos",
+    "F4": "Homologação",
+    "F5": "Aprovação",
+}
+MODULE_SCOPE = {
+    "docs": "documentação",
+    "backend": "backend",
+    "web": "web",
+    "mobile": "mobile",
+    "infra": "infraestrutura",
+    "postgresql": "banco",
+    "geral": "transversal",
+    "ops": "operacional",
+}
 ROOT_PREFIX = "GEP - "
 ROOT_SUFFIX = " - 0. [PAI]"
 EFFORT_SECONDS = 2 * 3600
 DAY_SECONDS = 8 * 3600
 REALIZED = {"done", "archived", "partial"}
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F300-\U0001F9FF"
+    "\U00002600-\U000027BF"
+    "\U0001F000-\U0001F02F"
+    "]+",
+    flags=re.UNICODE,
+)
+_CODE_TOKEN_RE = re.compile(
+    r"\bF\d+(?:\.S\d+(?:\.P\d+)?)?\b|\bS\d+(?:\.P\d+)?\b|\bM\.[A-Z0-9]+\b",
+    re.I,
+)
+_TS_SUFFIX_RE = re.compile(r"_\d{2}-\d{2}-\d{2}(?:_\d{2}-\d{2})?\b")
+_GITMOJI_PREFIX_RE = re.compile(r"^(?::[a-z0-9_+\-]+:)\s*", re.I)
 
 
 def format_root_name(name: str) -> str:
@@ -794,6 +825,115 @@ def _rollup_windows(cands: list[dict]) -> None:
                 cand["planned_duration"] = int((end - start).total_seconds())
 
 
+def _clean_theme_fragment(text: str) -> str:
+    """Remove ruído de pacote/commit para compor nome de sessão."""
+    value = re.sub(r"\s+", " ", (text or "").strip())
+    value = re.sub(r"^\[(?:docs|geral|infra|backend|web|mobile|postgresql|ops)\]\s*", "", value, flags=re.I)
+    value = _EMOJI_RE.sub(" ", value)
+    value = _GITMOJI_PREFIX_RE.sub("", value)
+    value = re.sub(r"\*\*([^*]+)\*\*", r"\1", value)
+    value = re.sub(r"\s+", " ", value).strip()
+    value = re.sub(
+        r"^(?:docs|feat|fix|chore|refactor|test|ci|build|style|perf|memo)(?:\([^)]*\))?:\s*",
+        "",
+        value,
+        flags=re.I,
+    )
+    value = _CODE_TOKEN_RE.sub(" ", value)
+    value = _TS_SUFFIX_RE.sub("", value)
+    value = re.sub(r"\b\d{2}-\d{2}-\d{2}(?:_\d{2}-\d{2})?\b", "", value)
+    value = re.sub(r"\(\+\d+\s*atomos?(?:,\s*[^)]*)?\)?", "", value, flags=re.I)
+    value = re.sub(r"checklist operacional\s*\([^)]*\)", "checklist operacional", value, flags=re.I)
+    value = re.sub(r"[`*_]+", "", value)
+    value = re.sub(r"\s+", " ", value).strip(" -–—:;,.")
+    # Evita tema que virou só metadado de plano.
+    if value.lower().startswith("(obrigatorio"):
+        value = "atualização de planos S/P"
+    if value.lower().startswith("branch:"):
+        value = value.split(":", 1)[-1].strip() or value
+    return value
+
+
+def is_generic_session_title(title: str | None, code: str | None = None) -> bool:
+    """True se o título é só o código ou vazio — proibido em S."""
+    text = re.sub(r"\s+", " ", (title or "").strip())
+    if not text:
+        return True
+    code_u = str(code or "").strip().upper()
+    text_u = text.upper()
+    if code_u and text_u in {code_u, f"[{code_u}]", f"[{code_u}] {code_u}"}:
+        return True
+    if re.fullmatch(r"\[?F\d+\.S\d+\]?(?:\s+F\d+\.S\d+)?", text_u):
+        return True
+    return False
+
+
+def synthesize_session_title(code: str, kids: list[dict]) -> str:
+    """Nome sugestivo no escopo da fase, derivado das tarefas/pacotes filhos."""
+    code_u = str(code or "").strip().upper()
+    phase = code_u.split(".", 1)[0] if code_u else ""
+    scope = PHASE_SCOPE.get(phase, phase or "Sessão")
+    themes: list[str] = []
+    modules: list[str] = []
+    for kid in kids:
+        mod = str(kid.get("module") or "").strip().lower()
+        if mod:
+            modules.append(mod)
+        frag = _clean_theme_fragment(str(kid.get("title") or ""))
+        if frag and frag.upper() != str(kid.get("code") or "").upper():
+            themes.append(frag)
+    mod_label = ""
+    if modules:
+        top = max(set(modules), key=modules.count)
+        if modules.count(top) >= max(1, (len(modules) + 1) // 2):
+            mod_label = MODULE_SCOPE.get(top, top)
+    if themes:
+        head = themes[0]
+        if len(head) > 72:
+            head = head[:69].rstrip(" -–—") + "…"
+        if len(themes) == 1:
+            body = head
+        else:
+            body = f"{head} (+{len(themes) - 1} pacotes)"
+    elif mod_label:
+        body = f"trabalhos de {mod_label}"
+    else:
+        body = f"sessão {code_u.split('.')[-1].lower() if code_u else 's'}"
+    if mod_label and mod_label not in body.lower():
+        title = f"{scope} — {mod_label}: {body}"
+    else:
+        title = f"{scope} — {body}"
+    return title[:200].strip()
+
+
+def enrich_session_titles(cands: list[dict]) -> int:
+    """Garante título sugestivo em todo S (nunca só o código)."""
+    by_parent: dict[str, list[dict]] = {}
+    for cand in cands:
+        parent = str(cand.get("parent_code") or "").upper()
+        if parent and cand.get("level") == "P":
+            by_parent.setdefault(parent, []).append(cand)
+    changed = 0
+    for cand in cands:
+        if cand.get("level") != "S":
+            continue
+        code = str(cand.get("code") or "").upper()
+        kids = by_parent.get(code) or []
+        title = str(cand.get("title") or "")
+        phase = code.split(".", 1)[0]
+        scope = PHASE_SCOPE.get(phase, "")
+        if is_generic_session_title(title, code):
+            cand["title"] = synthesize_session_title(code, kids)
+            changed += 1
+            continue
+        # Nome humano sem o escopo da fase: prefixa (mantém finalidade).
+        if scope and scope.lower() not in title.lower():
+            cleaned = _clean_theme_fragment(title) or title
+            cand["title"] = f"{scope} — {cleaned}"[:200]
+            changed += 1
+    return changed
+
+
 def _rollup_status(cands: list[dict]) -> None:
     """Propaga status/percent/% GEP dos filhos para S e F."""
     by_parent: dict[str, list[dict]] = {}
@@ -876,7 +1016,7 @@ def ensure_fsp(cands: list[dict], repo_root: Path) -> tuple[list[dict], list[dic
                 "level": "S",
                 "code": parent,
                 "parent_code": phase,
-                "title": parent,
+                "title": "",  # enrich_session_titles preenche com tema dos filhos
                 "status_local": "pending",
                 "percent_done": 0,
                 "confidence": 1,
@@ -909,6 +1049,7 @@ def ensure_fsp(cands: list[dict], repo_root: Path) -> tuple[list[dict], list[dic
     _rollup_status(kept)
     # Segundo passe: S/F que saíram de pending herdam real_* dos filhos.
     _rollup_windows(kept)
+    enrich_session_titles(kept)
     return kept, legacy
 
 

@@ -25,7 +25,7 @@ Project (R)
 | Nível | Código | Observação |
 |-------|--------|------------|
 | F | `F1`…`F5` | Fases GEP fixas |
-| S | `F#.S#` | Janela temporal (default: semana ISO) |
+| S | `F#.S#` | Janela temporal (default: semana ISO). **Nome** = escopo da fase + tema dos P filhos (nunca só o código) |
 | P | `F#.S#.P#` | Pacote ~2h; detalhe dos átomos no `content` |
 | Átomo | — | Só `content` + `atoms_detail` no JSON do pack |
 

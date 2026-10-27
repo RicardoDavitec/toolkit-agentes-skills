@@ -1855,7 +1855,8 @@ def load_existing_state(repo_root: Path, project_id: str) -> tuple[set[str], set
 
 
 # ---------------------------------------------------------------------------
-# Empacotamento 3 níveis: Fase (S) → Pacote (P ~2h) → átomos (só content)
+# Empacotamento 3 níveis: Fase F → Sessão S → Pacote P (~2h) → átomos (content)
+# Códigos canônicos: F#, F#.S#, F#.S#.P# (sem M.* / ….PKG#)
 # ---------------------------------------------------------------------------
 
 _MODULE_PATH_MAP = {
@@ -1871,16 +1872,28 @@ _MODULE_PATH_MAP = {
     "docs": "docs",
 }
 
-_MODULE_PHASE_TITLES = {
-    "backend": "Modulo backend",
-    "web": "Modulo web / frontend",
-    "mobile": "Modulo mobile",
-    "infra": "Modulo infra / deploy",
-    "postgresql": "Modulo postgresql / banco",
-    "docs": "Modulo documentacao",
-    "geral": "Modulo geral / transversal",
-    "ops": "Checklist operacional (processo)",
+# Módulo (path/título) → fase GEP quando o átomo não traz F# explícito.
+_MODULE_TO_LIFECYCLE = {
+    "docs": "F1",
+    "backend": "F2",
+    "web": "F2",
+    "mobile": "F2",
+    "postgresql": "F2",
+    "geral": "F2",
+    "infra": "F4",
+    "ops": "F2",
 }
+
+_LIFECYCLE_PHASE_TITLES = {
+    "F1": "F1. Planejamento",
+    "F2": "F2. Implementação",
+    "F3": "F3. Testes Internos",
+    "F4": "F4. Homologação",
+    "F5": "F5. Aprovação",
+}
+
+_FSP_CODE_RE = re.compile(r"^(F[1-5])(?:\.S(\d+)(?:\.P(\d+))?)?$", re.I)
+_LEGACY_SP_RE = re.compile(r"^S(\d+)(?:\.P(\d+))?$", re.I)
 
 _NOISE_TITLE_RE = re.compile(
     r"(?i)^(mudança tem objetivo|mudanca tem objetivo|build ou valida|"
@@ -1983,20 +1996,42 @@ def _status_from_atoms(atoms: list[dict]) -> tuple[str, int, str]:
     return "partial", avg, "gep3"
 
 
-def _module_phase_code(module: str) -> str:
-    slug = re.sub(r"[^A-Z0-9]", "", (module or "GERAL").upper())[:12] or "GERAL"
-    return f"M.{slug}"
+def _lifecycle_phase_for_atom(it: dict) -> str:
+    """Resolve F1–F5: phase/code/parent explícitos, senão mapa de módulo."""
+    for key in ("phase", "code", "parent_code"):
+        raw = str(it.get(key) or "").strip().upper()
+        match = _FSP_CODE_RE.fullmatch(raw)
+        if match:
+            return match.group(1).upper()
+        match = re.match(r"^(F[1-5])\b", raw)
+        if match:
+            return match.group(1).upper()
+    return _MODULE_TO_LIFECYCLE.get(str(it.get("module") or "geral").lower(), "F2")
 
 
-def _ensure_module_phase(phases_by_code: dict[str, dict], module: str) -> dict:
-    code = _module_phase_code(module)
-    if code in phases_by_code:
+def _iso_week_key(day: str) -> str:
+    if not day or day == "nodate":
+        return "nodate"
+    try:
+        stamp = datetime.strptime(day[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return "nodate"
+    iso = stamp.isocalendar()
+    return f"{iso[0]}W{iso[1]:02d}"
+
+
+def _ensure_lifecycle_phase(phases_by_code: dict[str, dict], phase_code: str) -> dict:
+    code = (phase_code or "F2").upper()
+    if code not in _LIFECYCLE_PHASE_TITLES:
+        code = "F2"
+    if code in phases_by_code and phases_by_code[code].get("kind") == "phase":
         return phases_by_code[code]
     phase = {
         "kind": "phase",
+        "level": "F",
         "code": code,
         "parent_code": None,
-        "title": _MODULE_PHASE_TITLES.get(module, f"Modulo {module}"),
+        "title": _LIFECYCLE_PHASE_TITLES[code],
         "status_local": "pending",
         "percent_done": 0,
         "state": "gep1",
@@ -2004,15 +2039,29 @@ def _ensure_module_phase(phases_by_code: dict[str, dict], module: str) -> dict:
         "plan_end": None,
         "real_start": None,
         "real_end": None,
-        "temporal_source": "pack-module",
-        "confidence": 0.85,
+        "temporal_source": "pack-lifecycle",
+        "confidence": 1.0,
         "source_repos": [],
-        "sources": [{"kind": "pack", "path": f"module:{module}"}],
-        "module": module,
-        "pack_generated": True,
+        "sources": [{"kind": "pack", "path": f"lifecycle:{code}"}],
+        "phase": code,
+        "phase_source": "pack",
+        "pack_generated": code not in phases_by_code,
     }
     phases_by_code[code] = phase
     return phase
+
+
+def _canonical_task_code(raw: str | None, phase: str) -> str | None:
+    """Aceita só F#.S#.P#; promove legado S#.P# para F#.S#.P#."""
+    if not raw:
+        return None
+    text = str(raw).strip().upper()
+    if _FSP_CODE_RE.fullmatch(text) and text.count(".") == 2:
+        return text
+    match = _LEGACY_SP_RE.fullmatch(text)
+    if match and match.group(2):
+        return f"{phase}.S{match.group(1)}.P{match.group(2)}"
+    return None
 
 
 def build_package_content(
@@ -2027,7 +2076,7 @@ def build_package_content(
     lines = [
         f"Nivel: pacote (P) | Modulo: {module} | Atomos: {len(atoms)} | "
         f"Esforco: {int(round(effort_min))} min",
-        "Hierarquia: Fase(S) → Pacote(P) → atomos (somente neste content)",
+        "Hierarquia: F (fase) → S (sessao) → P (pacote) → atomos (somente neste content)",
         "Atomos:",
     ]
     shown = atoms[: max(0, max_atoms)]
@@ -2085,19 +2134,27 @@ def pack_candidates(
     gap_min: int = DEFAULT_PACK_GAP_MIN,
     atom_clamp_min: int = DEFAULT_PACK_ATOM_CLAMP_MIN,
 ) -> tuple[list[dict], list[dict], dict]:
-    """Consolida itens em pacotes ~target_min.
+    """Consolida itens em pacotes ~target_min com códigos F#.S#.P#.
 
     Retorna (candidatos_apply, atoms_audit, pack_meta).
-    Candidatos apply = fases (originais + M.*) + pacotes (kind=item).
-    Átomos ficam só no content dos pacotes e no array atoms do relatório.
+    Candidatos apply = fases F1–F5 + pacotes (kind=item, level=package→P).
+    Sessões F#.S# são criadas depois por ensure_fsp a partir do parent_code.
+    Átomos ficam só no content dos pacotes e em atoms_detail.
     """
-    phases = [json.loads(json.dumps(c)) for c in cands if c.get("kind") == "phase"]
+    phases = [
+        json.loads(json.dumps(c))
+        for c in cands
+        if c.get("kind") == "phase"
+        and _FSP_CODE_RE.fullmatch(str(c.get("code") or "").upper())
+        and str(c.get("code") or "").upper().count(".") == 0
+    ]
     items = [json.loads(json.dumps(c)) for c in cands if c.get("kind") != "phase"]
 
     phases_by_code: dict[str, dict] = {
         (p.get("code") or "").upper(): p for p in phases if p.get("code")
     }
-    module_phases_added: list[str] = []
+    for code in _LIFECYCLE_PHASE_TITLES:
+        _ensure_lifecycle_phase(phases_by_code, code)
 
     work: list[dict] = []
     noise: list[dict] = []
@@ -2105,6 +2162,7 @@ def pack_candidates(
         it["module"] = infer_module(it)
         it["duration_minutes"] = atom_duration_minutes(it, clamp_min=atom_clamp_min)
         it["level"] = "atom"
+        it["phase"] = _lifecycle_phase_for_atom(it)
         if is_noise_atom(it):
             it["noise"] = True
             noise.append(it)
@@ -2112,48 +2170,50 @@ def pack_candidates(
             it["noise"] = False
             work.append(it)
 
-    # ruído → pacotes OPS por módulo/dia (não ProjectTask individuais)
-    noise_by_key: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    # ruído → pacotes OPS por fase/módulo/dia (não ProjectTask individuais)
+    noise_by_key: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
     for n in noise:
         end = _parse_dt(n.get("real_end") or n.get("plan_end") or n.get("plan_start"))
         day = end.date().isoformat() if end else "nodate"
-        noise_by_key[(n["module"], day)].append(n)
+        noise_by_key[(n["phase"], n["module"], day)].append(n)
 
-    # Chave: modulo + pai + dia (arquivos distintos no mesmo contexto entram juntos)
-    buckets: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
+    # Chave: fase GEP + semana + módulo + dia
+    buckets: dict[tuple[str, str, str, str], list[dict]] = defaultdict(list)
     for it in work:
-        module = it["module"]
-        parent = (it.get("parent_code") or "").upper().strip()
-        if not parent or parent not in phases_by_code:
-            phase = _ensure_module_phase(phases_by_code, module)
-            if phase["code"] not in module_phases_added and phase.get("pack_generated"):
-                module_phases_added.append(phase["code"])
-            parent = phase["code"]
-            it["parent_code"] = parent
+        phase = it["phase"]
+        _ensure_lifecycle_phase(phases_by_code, phase)
         end = _parse_dt(it.get("real_end") or it.get("plan_end") or it.get("plan_start"))
         day = end.date().isoformat() if end else "nodate"
-        buckets[(module, parent, day)].append(it)
+        week = _iso_week_key(day)
+        it["pack_week"] = week
+        buckets[(phase, week, it["module"], day)].append(it)
 
-    packages: list[dict] = []
-    pack_seq: dict[str, int] = defaultdict(int)
+    # grupos crus antes da numeração F#.S#.P#
+    raw_groups: list[dict] = []
 
-    def flush_group(module: str, parent: str, day: str, group: list[dict]) -> None:
+    def flush_group(
+        phase: str,
+        week: str,
+        module: str,
+        day: str,
+        group: list[dict],
+        *,
+        noise_package: bool = False,
+    ) -> None:
         if not group:
             return
-        pack_seq[parent] += 1
-        seq = pack_seq[parent]
         effort = sum(float(a.get("duration_minutes") or 0) for a in group)
         st, pct, state = _status_from_atoms(group)
         starts = [_parse_dt(a.get("real_start") or a.get("plan_start")) for a in group]
         ends = [_parse_dt(a.get("real_end") or a.get("plan_end")) for a in group]
         starts_v = [d for d in starts if d]
         ends_v = [d for d in ends if d]
-        # código: 1 átomo com code estável → preserva; senão PARENT.PKGn (evita colidir com S.Pn do plano)
-        if len(group) == 1 and group[0].get("code"):
-            code = str(group[0]["code"]).upper()
-        else:
-            code = f"{parent}.PKG{seq}"
+        preferred = None
+        if len(group) == 1:
+            preferred = _canonical_task_code(group[0].get("code"), phase)
         title = _synthesize_package_title(group, module, day)
+        if noise_package:
+            title = f"[{module}] checklist operacional ({day}, {len(group)} itens)"[:255]
         repos: set[str] = set()
         sources: list[dict] = []
         for a in group:
@@ -2175,22 +2235,20 @@ def pack_candidates(
                     "sources": a.get("sources") or [],
                 }
             )
-            a["packed_into"] = code
         pkg = {
             "kind": "item",
             "level": "package",
-            "code": code,
-            "parent_code": parent,
+            "phase": phase,
+            "pack_week": week,
+            "preferred_code": preferred,
             "title": title,
             "status_local": st,
             "percent_done": pct,
             "state": state,
             "plan_start": _fmt_dt(min(starts_v)) if starts_v else None,
             "plan_end": _fmt_dt(max(ends_v)) if ends_v else None,
-            "real_start": _fmt_dt(min(starts_v)) if starts_v and st != "pending" else (
-                _fmt_dt(min(starts_v)) if starts_v and state == "gep7" else None
-            ),
-            "real_end": _fmt_dt(max(ends_v)) if ends_v and st == "done" else None,
+            "real_start": None,
+            "real_end": None,
             "temporal_source": "pack",
             "confidence": max(float(a.get("confidence") or 0.8) for a in group),
             "source_repos": sorted(repos),
@@ -2200,8 +2258,9 @@ def pack_candidates(
             "atom_count": len(group),
             "atoms": atom_refs,
             "estimated_minutes": int(round(effort)),
+            "noise_package": noise_package,
+            "_atoms": group,
         }
-        # datas reais: se há done/partial com janela
         if starts_v and st in ("done", "partial"):
             pkg["real_start"] = _fmt_dt(min(starts_v))
         if ends_v and st == "done":
@@ -2212,17 +2271,22 @@ def pack_candidates(
             pkg["plan_end"] = pkg["real_end"]
         elif not pkg.get("plan_end") and ends_v:
             pkg["plan_end"] = _fmt_dt(max(ends_v))
-        packages.append(pkg)
+        raw_groups.append(pkg)
 
-    for (module, parent, day), lst in sorted(buckets.items()):
+    for (phase, week, module, day), lst in sorted(buckets.items()):
         lst = sorted(lst, key=_atom_sort_key)
         cur: list[dict] = []
         cur_mins = 0.0
         prev_end: datetime | None = None
 
-        def _flush() -> None:
+        def _flush(
+            _phase: str = phase,
+            _week: str = week,
+            _module: str = module,
+            _day: str = day,
+        ) -> None:
             nonlocal cur, cur_mins, prev_end
-            flush_group(module, parent, day, cur)
+            flush_group(_phase, _week, _module, _day, cur)
             cur = []
             cur_mins = 0.0
             prev_end = None
@@ -2246,29 +2310,75 @@ def pack_candidates(
         if cur:
             _flush()
 
-    # pacotes de ruído (processo) sob M.OPS ou módulo
-    for (module, day), lst in sorted(noise_by_key.items()):
+    for (phase, module, day), lst in sorted(noise_by_key.items()):
         if not lst:
             continue
-        phase = _ensure_module_phase(phases_by_code, module)
-        if phase["code"] not in module_phases_added and phase.get("pack_generated"):
-            module_phases_added.append(phase["code"])
+        week = _iso_week_key(day)
         for a in lst:
-            a["parent_code"] = phase["code"]
-            a["packed_into"] = f"{phase['code']}.OPS"
-        # um pacote OPS por módulo/dia
-        flush_group(module, phase["code"], day, lst)
-        # renomear último pacote para deixar claro
-        if packages:
-            packages[-1]["title"] = f"[{module}] checklist operacional ({day}, {len(lst)} itens)"[:255]
-            packages[-1]["code"] = f"{phase['code']}.OPS.{day.replace('-', '')[-6:]}"
-            packages[-1]["noise_package"] = True
+            a["phase"] = phase
+            a["pack_week"] = week
+        flush_group(phase, week, module, day, lst, noise_package=True)
 
-    # enriquecer fases módulo com datas dos pacotes
-    all_phases = list(phases_by_code.values())
+    # Numerar sessões por fase (ordem de semana) e P sob cada S
+    week_order: dict[str, list[str]] = defaultdict(list)
+    for pkg in raw_groups:
+        phase = pkg["phase"]
+        week = pkg["pack_week"]
+        if week not in week_order[phase]:
+            week_order[phase].append(week)
+    for phase in week_order:
+        week_order[phase].sort()
+
+    session_code_of: dict[tuple[str, str], str] = {}
+    for phase, weeks in week_order.items():
+        for idx, week in enumerate(weeks, start=1):
+            session_code_of[(phase, week)] = f"{phase}.S{idx}"
+
+    packages: list[dict] = []
+    pack_seq: dict[str, int] = defaultdict(int)
+    used_codes: set[str] = set()
+
+    for pkg in sorted(
+        raw_groups,
+        key=lambda p: (
+            p.get("phase") or "",
+            p.get("pack_week") or "",
+            p.get("plan_start") or p.get("real_start") or "",
+            p.get("title") or "",
+        ),
+    ):
+        phase = pkg["phase"]
+        week = pkg["pack_week"]
+        session = session_code_of[(phase, week)]
+        preferred = pkg.pop("preferred_code", None)
+        atoms = pkg.pop("_atoms", [])
+        if preferred and preferred.startswith(f"{session}.") and preferred not in used_codes:
+            code = preferred
+        else:
+            pack_seq[session] += 1
+            code = f"{session}.P{pack_seq[session]}"
+            while code in used_codes:
+                pack_seq[session] += 1
+                code = f"{session}.P{pack_seq[session]}"
+        used_codes.add(code)
+        pkg["code"] = code
+        pkg["parent_code"] = session
+        pkg["level"] = "P"
+        for a in atoms:
+            a["packed_into"] = code
+            a["parent_code"] = session
+            a["phase"] = phase
+        packages.append(pkg)
+
+    all_phases = [phases_by_code[c] for c in _LIFECYCLE_PHASE_TITLES if c in phases_by_code]
+    # parent temporário = fase para enriquecer plan_* da F a partir dos P
+    for pkg in packages:
+        pkg["_rollup_parent"] = pkg["parent_code"]
+        pkg["parent_code"] = pkg["phase"]
     enrich_phase_dates_from_children(all_phases + packages)
+    for pkg in packages:
+        pkg["parent_code"] = pkg.pop("_rollup_parent")
 
-    # ordenar
     def _cand_key(x: dict):
         return (
             0 if x.get("kind") == "phase" else 1,
@@ -2290,7 +2400,9 @@ def pack_candidates(
         "atoms_noise": len(noise),
         "packages": len(packages),
         "phases": len(all_phases),
-        "module_phases_added": sorted(set(module_phases_added)),
+        "sessions": len(session_code_of),
+        "module_phases_added": [],
+        "lifecycle_phases": sorted(phases_by_code),
         "effort_minutes_total": int(round(effort_total)),
         "effort_hours_total": round(effort_total / 60.0, 1),
         "by_module": {},
@@ -2320,7 +2432,7 @@ def _finalize_candidate_actions(
             c["action"] = "SKIP"
         else:
             c["action"] = "NEW"
-        if c.get("level") == "package" and c.get("atoms"):
+        if c.get("atoms") and c.get("level") in ("package", "P", "item"):
             content = build_package_content(
                 [
                     {

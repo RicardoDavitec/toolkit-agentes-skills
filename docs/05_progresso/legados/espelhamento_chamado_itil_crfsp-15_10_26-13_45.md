@@ -3,8 +3,10 @@
 > Criado: 15/10/2026 13:45 · Fase principal: `F1` · Produto: `toolkit-agentes-skills`
 > Arquivo: `espelhamento_chamado_itil_crfsp-15_10_26-13_45.md`
 > Substitui: `unificacao_template_kit_glpi_cursor_canonico-13_10_26-14_37.md` (aceito em 14/10, movido para legados neste ciclo)
-> Estado: **planejado**
-> Piloto: Bot_Pan — C1 = chamado 15817 (producao), R1 = projeto 12 "GEP - Botão de Pânico - 0. [PAI]"
+> Estado: **legado** — arquivado em 27/10/2026
+> Motivo: o espelhamento e a convencao C/R/F/S/P avancaram a partir do Bot_Pan e do samu-operacional; este plano ficou superado.
+> **Chamado ITIL (C) deste template (producao):** 16531 — Template de integracao de projetos com o GLPI
+> Piloto historico: Bot_Pan — chamado 15817 (producao), projeto 12 "GEP - Botão de Pânico - 0. [PAI]"
 
 ## Objetivo
 

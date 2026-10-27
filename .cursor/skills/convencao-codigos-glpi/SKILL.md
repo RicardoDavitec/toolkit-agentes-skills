@@ -64,7 +64,7 @@ Documento sem chamado definido não ganha essas linhas.
 - Tabela: `F1.S1 | Levantamento e decisoes | 15/10 | 8 h | [~] |`
 - Tarefa: `- [ ] **F2.S1.P1** codes.pattern e topology em model.defaults.yaml`
 - Comentário: `<!-- glpi: code="F2.S1.P1" -->`
-- Anexo: `anexos/F1_S1_levantamento_e_decisoes-15_10_26.md`
+- Anexo: `docs/05_progresso/legados/anexos/F1_S1_levantamento_e_decisoes-15_10_26.md`
 
 ## Regex de validação
 

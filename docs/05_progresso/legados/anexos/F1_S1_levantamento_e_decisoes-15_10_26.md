@@ -4,7 +4,8 @@
 > **Projeto/Requisicao (R):** 12 - "GEP - Botao de Panico - 0. [PAI]"
 > **Piloto:** Bot_Pan | **Data:** 15/10/2026
 
-> Plano: [`espelhamento_chamado_itil_crfsp-15_10_26-13_45.md`](../espelhamento_chamado_itil_crfsp-15_10_26-13_45.md)
+> Plano (legado): [`espelhamento_chamado_itil_crfsp-15_10_26-13_45.md`](../espelhamento_chamado_itil_crfsp-15_10_26-13_45.md)
+> Arquivado em 27/10/2026 com o plano. Chamado ITIL do template em producao: 16531.
 
 ## 1. Evidencia lida no GLPI de producao (15/10, 11:42–11:55)
 

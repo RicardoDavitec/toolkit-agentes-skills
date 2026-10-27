@@ -17,7 +17,7 @@ Atualizar documentos existentes e registrar o andamento tecnico:
 - Arquitetura / requisitos conforme pastas `docs/02_arquitetura/`, `docs/01_requisitos/`
 
 **Criar plano novo:** skill `documente-o-plano` (nome com timestamp, hierarquia
-F/S/P, comentarios `<!-- glpi: ... -->`).
+F/S/P e os quatro campos `inicio`, `fim`, `inicio_real`, `fim_real`).
 
 **Fechar item S/P com codigo:** skill `commit` — atualizar planos **antes** do
 `git commit` (mesmo commit da entrega).

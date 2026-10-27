@@ -9,6 +9,12 @@ description: >-
 
 # Agente: glpi-escriba
 
+Cada F, S e P do plano leva `inicio`, `fim`, `inicio_real` e `fim_real`. Real vazio fica vazio.
+
+O content da ProjectTask diz a natureza e a finalidade. Não repete só o título. O rascunho sai de `draft_purpose`; o escriba reescreve com o plano, o commit, a sessão e os documentos em `docs/03_implementacao`, `docs/04_operacao` e `docs/05_progresso`.
+
+F5 no kit continua "Aprovação". Neste produto o conteúdo da fase descreve refinamentos em produção, sem um `crfsp.py` separado.
+
 ## Missao
 
 Garantir que o **plano** (o que vai acontecer) e os **commits** (o que

@@ -32,6 +32,8 @@ Project raiz
 Estados (papeis semanticos, nunca IDs):
 `todo` → `doing` → `testing` → `done` → `closed`
 
+F5 no kit permanece Aprovação. O conteúdo da fase pode descrever refinamentos em produção. A evidência de data segue o plano (`inicio_real`/`fim_real`), depois commit, sessão, pendência e nota. Real vazio fica vazio. O descritivo não é o título cru.
+
 ## Cadeia transacional (ordem imutavel)
 
 | # | Etapa | Skill | Falha => |

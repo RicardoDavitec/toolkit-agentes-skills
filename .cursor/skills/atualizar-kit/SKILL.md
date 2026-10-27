@@ -1,22 +1,22 @@
 ---
 name: atualizar-kit
-description: "Verifica atualizacoes no repositorio fonte pmf-dev-kit e sincroniza tools/skills/docs no repositorio produto que chamou. Use quando o usuario pedir atualizar kit, sync kit, upgrade kit ou sincronizar pmf-dev-kit."
+description: "Verifica atualizacoes no toolkit-agentes-skills e sincroniza tools/skills/docs no repositorio produto que chamou. Use quando o usuario pedir atualizar kit, sync kit, upgrade kit ou sincronizar o template."
 argument-hint: "Opcional: --profile=pmf-core|full-skeleton|glpi-only · --check-only · caminho do kit"
 ---
 
 # Skill: atualizar-kit
 
-Sincroniza o **produto atual** (repo que chamou) com novidades do **pmf-dev-kit** sem apagar `.glpi/project.yaml` / state.
+Sincroniza o **produto atual** (repo que chamou) com novidades do **toolkit-agentes-skills** sem apagar `.glpi/project.yaml` / state.
 
 ## Gatilhos
 
-- "atualizar kit", "sync kit", "upgrade kit", "sincronizar pmf-dev-kit"
+- "atualizar kit", "sync kit", "upgrade kit", "sincronizar toolkit-agentes-skills"
 
 ## Fluxo obrigatorio
 
 1. **Resolver dirs**
    - `TARGET` = raiz do repositorio produto (`git rev-parse --show-toplevel` ou cwd do produto).
-   - `KIT` = clone do pmf-dev-kit (ver resolucao abaixo).
+   - `KIT` = clone do toolkit-agentes-skills (ver resolucao abaixo).
 2. **Checar updates no kit**
    ```bash
    python3 "$KIT/scripts/atualizar_kit.py" --target="$TARGET" --check-only
@@ -39,11 +39,12 @@ Sincroniza o **produto atual** (repo que chamou) com novidades do **pmf-dev-kit*
 
 Ordem:
 
-1. Flag `--kit=/caminho/pmf-dev-kit`
-2. Env `PMF_DEV_KIT` ou `PMF_KIT_ROOT`
-3. `.glpi/kit.yaml` no produto com `path: /.../pmf-dev-kit`
-4. Irmao comum: `../pmf-dev-kit` relativo ao TARGET
-5. Fallback: `$HOME/projetos/pmf-dev-kit`
+1. Flag `--kit=/caminho/toolkit-agentes-skills`
+2. Env `TOOLKIT_KIT`, `TOOLKIT_ROOT`, `PMF_DEV_KIT` ou `PMF_KIT_ROOT`
+3. `.glpi/kit.yaml` no produto com `path:`
+4. O proprio script, se estiver rodando de dentro do kit
+5. Irmao `../toolkit-agentes-skills` e `$HOME/projetos/toolkit-agentes-skills`
+6. Fallback legado: `../pmf-dev-kit` e `$HOME/projetos/pmf-dev-kit`
 
 Se nao achar: **parar** e pedir o caminho.
 

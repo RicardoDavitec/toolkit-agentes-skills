@@ -88,9 +88,17 @@ Codes legados `PR/PH/R/H/I` e `S4` (sem fase) estao **descontinuados**:
 | `- [x]` | `done` | obrigatorio | obrigatorio | obrigatorio |
 | `- [A]` | `closed` | obrigatorio | obrigatorio | obrigatorio + `accept_ref` |
 
-~~~html
-<!-- glpi: code="F2.S1.P1" plan_start="..." plan_end="..." real_start="..." real_end="..." -->
+Cada F, S e P leva, na hora, quatro campos visíveis. O vazio fica vazio: não copiar o planejado para o real.
+
+~~~text
+- [ ] **F2.S1.P1** titulo da tarefa
+  - inicio: 2026-10-28 14:00
+  - fim: 2026-10-28 16:00
+  - inicio_real:
+  - fim_real:
 ~~~
+
+`inicio` e `fim` são o planejado. `inicio_real` e `fim_real` são o realizado. Tarefa por fazer deixa os dois reais em branco. Tarefa em andamento preenche só `inicio_real`. Tarefa feita preenche os dois. O comentário `<!-- glpi: ... -->` continua válido em plano antigo; se os quatro campos existirem, eles vencem.
 
 `- [t]` e `- [A]` sao **novidades**: existem porque a instancia tem estados
 proprios de "Testando" e "Fechado" que o modelo antigo nao usava.

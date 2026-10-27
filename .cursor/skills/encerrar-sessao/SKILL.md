@@ -24,6 +24,7 @@ Fecha a sessao do dia com registro objetivo em `docs/05_progresso/geral/`.
    - Verificar alteracoes pendentes no git (`git status -sb`).
 2. Nomear arquivo: `SESSAO_AAAA-MM-DD_<DESCRICAO_CURTA>.md` em `docs/05_progresso/geral/`.
 3. Criar documento com: Sumario Executivo, Commits da sessao, Problemas, Decisoes, Proximas acoes.
+   Em cada P fechado no dia, o plano correspondente leva `inicio_real` e `fim_real` preenchidos. Campo real vazio fica vazio.
 4. Atualizar `docs/05_progresso/geral/README.md` (ou `LEIA-ME.md` se existir).
 5. Versionar: `git add docs/`, sugerir `docs(geral): registra sessao AAAA-MM-DD`, confirmar, commitar.
 6. Perguntar sobre push (skill `exporte`; com remote `github`, skill `sincronize`).

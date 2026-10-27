@@ -57,6 +57,13 @@ commit permitido  <=>  (delta_codigo vazio)  OU  (delta_plano nao vazio)
    ~~~html
    <!-- glpi: code="F2.S4.P5" plan_start="..." plan_end="..." real_start="..." real_end="..." -->
    ~~~
+   E, no mesmo item, os quatro campos visíveis (o vazio fica vazio):
+   ~~~text
+   - inicio: ...
+   - fim: ...
+   - inicio_real: ...
+   - fim_real: ...
+   ~~~
    | Marcador | Papel | real_start | real_end |
    |----------|-------|------------|----------|
    | `[ ]` | todo | omitir | omitir |

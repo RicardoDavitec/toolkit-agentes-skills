@@ -18,6 +18,8 @@ O Project raiz no preset PMF leva o prefixo `GEP - ` (`naming.root`: `GEP - {pro
 
 Em F, S e P, gravar sempre `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration`. No realizado, a duração efetiva e as datas saem do plano ou do `git log`. No planejado, início e fim planejados são obrigatórios (data do plano ou data estipulada na criação) e a duração efetiva fica `0`.
 
+Na criação de raiz e de fase, gravar Estado e o campo `date` (Data de criação da ficha). Sem estado explícito, usar `gep1`. Na criação de sessão e tarefa, gravar Estado e `date_creation`. `date_mod` é só a última atualização. Atualização não recoloca `gep1` nem reescreve a data de criação.
+
 ## Modelo mental obrigatorio
 
 ```text

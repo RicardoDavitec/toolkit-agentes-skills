@@ -41,6 +41,12 @@ No GLPI, C e R existem como ids (`tickets_id`, `projects_id`, `Itil_Project`), n
 
 No preset PMF (`api-vscode-glpi`), o Project raiz leva o prefixo `GEP - ` na frente do nome do produto. O molde em `naming.root` é `GEP - {produto} - 0. [PAI]`. Subprojeto de fase não recebe esse prefixo. `glpi project create` sem `--parent-project` aplica `GEP - ` quando o nome ainda não começa assim.
 
+## Estado e data de criação
+
+Na criação de Project (raiz ou fase), gravar Estado e Data de criação. Sem `--state`, o estado é `gep1` (GEP 1. Produto Backlog). Sem `--date`, o campo `date` recebe o instante da criação (`YYYY-MM-DD HH:MM:SS`). Na ficha, "Data de criação" é `date`. "Última atualização" é `date_mod` e não ocupa o lugar de `date`.
+
+Na criação de sessão ou tarefa (`ProjectTask`), gravar o mesmo Estado (`gep1` se não vier outro). A Data de criação da tarefa é `date_creation`. A ficha da tarefa não tem o campo `date` do projeto. Atualização de tarefa já existente não recoloca `gep1` nem reescreve `date_creation`.
+
 ## Cabeçalho único
 
 Só em documento que pertença a um chamado e a um projeto já conhecidos. Modelo do piloto Bot_Pan:

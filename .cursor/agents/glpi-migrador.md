@@ -18,6 +18,8 @@ Ao criar ou renomear o Project raiz no preset PMF, o nome leva o prefixo `GEP - 
 
 Não migrar F, S ou P sem `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration`. No realizado, a duração efetiva vem do plano ou do git. No planejado, a duração efetiva fica `0`. F5 no kit permanece Aprovação; não criar string própria no produto.
 
+Ao criar fase, gravar Estado (`gep1` se não houver outro) e `date`. Ao criar sessão ou tarefa, gravar Estado e `date_creation`. Não apagar um estado já gravado para recolocar o padrão.
+
 ## A ambiguidade central (explicar SEMPRE ao usuario)
 
 ```text

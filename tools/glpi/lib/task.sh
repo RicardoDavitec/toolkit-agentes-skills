@@ -124,3 +124,24 @@ append_task_to_state() {
     end
   ' "$state_file" >"$tmp" && mv "$tmp" "$state_file"
 }
+
+# Na criação, a ficha não pode sair só com "Última atualização" (date_mod).
+# Project: Estado + campo date ("Data de criação").
+# ProjectTask: Estado + date_creation (a tarefa não tem o campo date).
+# Sem estado explícito, o padrão é gep1 (GEP 1. Produto Backlog).
+ensure_creation_stamp() {
+  local kind="${1:-project}" json="${2:-}"
+  local date_field="date" state_now="" date_now="" state_id="" now=""
+  [[ "$kind" == "task" ]] && date_field="date_creation"
+  state_now="$(printf '%s' "$json" | jq -r '.projectstates_id // empty')"
+  date_now="$(printf '%s' "$json" | jq -r --arg f "$date_field" '.[$f] // empty')"
+  if [[ -z "$state_now" || "$state_now" == "0" || "$state_now" == "null" ]]; then
+    state_id="$(resolve_state_id gep1)"
+    json="$(printf '%s' "$json" | jq -c --argjson s "$state_id" '.projectstates_id = $s')"
+  fi
+  if [[ -z "$date_now" || "$date_now" == "null" ]]; then
+    now="$(date '+%Y-%m-%d %H:%M:%S')"
+    json="$(printf '%s' "$json" | jq -c --arg f "$date_field" --arg d "$now" '.[$f] = $d')"
+  fi
+  printf '%s\n' "$json"
+}

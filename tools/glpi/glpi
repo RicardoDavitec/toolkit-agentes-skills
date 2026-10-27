@@ -21,6 +21,7 @@ Ambiente:
 Comandos:
   auth                     Inicia sessao e imprime session_token (teste)
   ticket get [id]          Obtem chamado (default: .glpi/project.yaml)
+  ticket tasks [id]        Lista tarefas ativas do chamado (state diferente de feita). So leitura.
   ticket followup [id] <texto|->
                            Envia ITILFollowup (texto ou stdin com -)
   project get [id]         Obtem projeto GLPI
@@ -28,8 +29,10 @@ Comandos:
   project create [opcoes] [--apply]
                            Cria Project GLPI (dry-run por padrao).
                            Sem pai, o nome segue GEP - {produto} - 0. [PAI]
-  project update --id=N [--name=...] [--code=...] [--parent-project=ID] [--apply]
-                           Renomeia Project. Sem pai, ou pai 0, aplica o molde GEP.
+                           Grava Estado (default gep1) e date (Data de criação).
+  project update --id=N [--name=...] [--code=...] [--state=] [--date=] [--parent-project=ID] [--apply]
+                           Renomeia Project ou grava estado e data de criação.
+                           Sem pai, ou pai 0, aplica o molde GEP.
   ticket-mirror [--apply] [--env=homolog] [--from=JSON]
                            Espelha P em andamento e futuros no chamado pai
   task get <id>            Obtem ProjectTask
@@ -52,7 +55,9 @@ Opcoes project create:
   --name=TEXTO (obrigatorio)
   --code=TEXTO
   --priority=1..6          (1 critica … 6 muito baixa; default 3)
-  --state=ALIAS|ID
+  --state=ALIAS|ID         (default na criação: gep1)
+  --date=YYYY-MM-DD[ HH:MM:SS]
+                           Campo date da ficha (Data de criação). Default: agora.
   --content=TEXTO
   --comment=TEXTO
   --plan-start= --plan-end= --real-start= --real-end=
@@ -66,7 +71,7 @@ Opcoes comuns (create|patch|upsert):
   --code=CODIGO              (pai S4 | filho S4.P1; state local)
   --kind=phase|item          (opcional; inferido do code)
   --percent=0..100
-  --state=ALIAS|ID           (ver .glpi/maps/states.json)
+  --state=ALIAS|ID           (ver .glpi/maps/states.json; criação sem estado = gep1)
   --content=TEXTO
   --plan-start=YYYY-MM-DD[ HH:MM:SS]
   --plan-end=...
@@ -115,6 +120,28 @@ cmd_ticket_get() {
   glpi_init_session
   trap 'glpi_kill_session' EXIT
   glpi_curl GET "/Ticket/${tid}?expand_dropdowns=true" | jq .
+}
+
+cmd_ticket_tasks() {
+  local tid raw
+  tid="$(resolve_ticket_id "${1:-}")"
+  glpi_init_session
+  trap 'glpi_kill_session' EXIT
+  echo "chamado=${tid} env=${GLPI_ENV:-prod}"
+  raw="$(glpi_curl GET "/Ticket/${tid}/TicketTask?range=0-199")"
+  printf '%s' "$raw" | jq '
+    if type != "array" then {erro: "resposta inesperada"}
+    else
+      [.[] | select((.state | tonumber) != 2)]
+      | sort_by(.begin // "")
+      | map({
+          id,
+          state,
+          begin,
+          end,
+          content: (.content // "" | gsub("<[^>]+>"; "") | gsub("\\s+"; " ") | .[0:140])
+        })
+    end'
 }
 
 cmd_ticket_followup() {
@@ -309,6 +336,7 @@ cmd_seed_phases() {
         | if ($milestone|length)>0 then . + {is_milestone: ($milestone|tonumber)} else . end
       )}'
     )"
+    payload="$(jq -n --argjson input "$(ensure_creation_stamp task "$(echo "$payload" | jq -c '.input')")" '{input:$input}')"
 
     resp="$(echo "$payload" | glpi_curl POST "/ProjectTask/")"
     new_id="$(echo "$resp" | jq -r 'if type=="object" then .id // empty elif type=="array" then .[0].id // empty else empty end')"
@@ -522,7 +550,7 @@ build_task_input() {
 
 task_do_create() {
   local input payload resp new_id pid parent_resolved=""
-  input="$(build_task_input)"
+  input="$(ensure_creation_stamp task "$(build_task_input)")"
   # build_task_input roda em subshell via $() — recuperar pai do payload
   parent_resolved="$(echo "$input" | jq -r '.projecttasks_id // empty')"
   TASK_PARENT_RESOLVED="$parent_resolved"
@@ -729,7 +757,7 @@ EOF
 }
 
 cmd_project_create() {
-  local apply=0 name="" code="" priority="3" state="" content="" comment=""
+  local apply=0 name="" code="" priority="3" state="" content="" comment="" created=""
   local plan_start="" plan_end="" real_start="" real_end="" parent="" type_id="" json=""
   local arg
   for arg in "$@"; do
@@ -739,6 +767,7 @@ cmd_project_create() {
       --code=*) code="${arg#--code=}" ;;
       --priority=*) priority="${arg#--priority=}" ;;
       --state=*|--state-id=*) state="${arg#*=}" ;;
+      --date=*) created="$(normalize_glpi_datetime "${arg#--date=}")" ;;
       --content=*) content="${arg#--content=}" ;;
       --comment=*) comment="${arg#--comment=}" ;;
       --plan-start=*) plan_start="$(normalize_glpi_datetime "${arg#--plan-start=}")" ;;
@@ -749,7 +778,8 @@ cmd_project_create() {
       --type-id=*) type_id="${arg#--type-id=}" ;;
       --json=*) json="${arg#--json=}" ;;
       -h|--help)
-        echo "Uso: glpi project create --name=... [--code=...] [--state=gep1] [--priority=3] [--apply]"
+        echo "Uso: glpi project create --name=... [--code=...] [--state=gep1] [--date=YYYY-MM-DD HH:MM:SS] [--priority=3] [--apply]"
+        echo "  Sem --state, grava gep1. Sem --date, grava o instante da criação no campo date."
         return 0
         ;;
       *) die "flag desconhecida: $arg" ;;
@@ -783,6 +813,7 @@ cmd_project_create() {
     --arg parent "$parent" \
     --arg type_id "$type_id" \
     --arg state "$state_id" \
+    --arg created "$created" \
     '
     def put($k;$v): if ($v|tostring|length)>0 then . + {($k):$v} else . end;
     def putn($k;$v): if ($v|tostring|length)>0 then . + {($k):($v|tonumber)} else . end;
@@ -792,6 +823,7 @@ cmd_project_create() {
     | putn("priority"; $priority)
     | put("content"; $content)
     | put("comment"; $comment)
+    | put("date"; $created)
     | put("plan_start_date"; $plan_start)
     | put("plan_end_date"; $plan_end)
     | put("real_start_date"; $real_start)
@@ -808,6 +840,7 @@ cmd_project_create() {
   if ! echo "$input" | jq -e '.name|type=="string" and length>0' >/dev/null; then
     die "project create exige --name="
   fi
+  input="$(ensure_creation_stamp project "$input")"
   payload="$(jq -n --argjson input "$input" '{input:$input}')"
   echo "Modo: $([[ "$apply" -eq 1 ]] && echo APPLY || echo DRY-RUN)"
   echo "$payload" | jq .
@@ -827,7 +860,7 @@ cmd_project_create() {
 }
 
 cmd_project_update() {
-  local apply=0 id="" name="" code="" parent=""
+  local apply=0 id="" name="" code="" parent="" state="" created=""
   local arg
   for arg in "$@"; do
     case "$arg" in
@@ -835,11 +868,14 @@ cmd_project_update() {
       --id=*) id="${arg#--id=}" ;;
       --name=*) name="${arg#--name=}" ;;
       --code=*) code="${arg#--code=}" ;;
+      --state=*|--state-id=*) state="${arg#*=}" ;;
+      --date=*) created="$(normalize_glpi_datetime "${arg#--date=}")" ;;
       --parent-project=*) parent="${arg#--parent-project=}" ;;
       -h|--help)
-        echo "Uso: glpi project update --id=N [--name=...] [--code=...] [--parent-project=ID] [--apply]"
+        echo "Uso: glpi project update --id=N [--name=...] [--code=...] [--state=gep1] [--date=YYYY-MM-DD HH:MM:SS] [--parent-project=ID] [--apply]"
         echo "  Pai ausente ou 0: o nome da raiz recebe GEP - {produto} - 0. [PAI]."
         echo "  Pai diferente de 0: fase e subprojeto nao recebem esse prefixo."
+        echo "  --state e --date gravam Estado e Data de criação sem exigir rename."
         return 0
         ;;
       *) die "flag desconhecida: $arg" ;;
@@ -847,21 +883,30 @@ cmd_project_update() {
   done
   [[ "${GLPI_DRY_RUN:-0}" == "1" ]] && apply=0
   [[ -n "$id" ]] || die "project update exige --id="
-  [[ -n "$name" || -n "$code" ]] || die "project update exige --name= ou --code="
+  [[ -n "$name" || -n "$code" || -n "$state" || -n "$created" ]] || die "project update exige --name=, --code=, --state= ou --date="
   if [[ -z "$parent" || "$parent" == "0" ]]; then
     if [[ -n "$name" ]]; then
       name="$(python3 "${SCRIPT_DIR}/lib/crfsp.py" --format-root-name "$name")"
     fi
   fi
+  local state_id=""
+  if [[ -n "$state" ]]; then
+    state_id="$(resolve_state_id "$state")"
+  fi
   local input payload
   input="$(jq -n \
     --arg name "$name" \
     --arg code "$code" \
+    --arg created "$created" \
+    --arg state "$state_id" \
     '
     def put($k;$v): if ($v|tostring|length)>0 then . + {($k):$v} else . end;
+    def putn($k;$v): if ($v|tostring|length)>0 then . + {($k):($v|tonumber)} else . end;
     {}
     | put("name"; $name)
     | put("code"; $code)
+    | put("date"; $created)
+    | putn("projectstates_id"; $state)
     ')"
   payload="$(jq -n --argjson input "$input" '{input:$input}')"
   echo "Modo: $([[ "$apply" -eq 1 ]] && echo APPLY || echo DRY-RUN)"
@@ -949,7 +994,7 @@ cmd_retro_apply() {
       --from=*) from="${arg#--from=}" ;;
       --apply) apply=1; extra+=(--apply) ;;
       --include-skip|--continue-on-error) extra+=("$arg") ;;
-      --kinds=*|--limit=*|--codes=*|--glpi-bin=*) extra+=("$arg") ;;
+      --kinds=*|--limit=*|--codes=*|--glpi-bin=*|--phase-projects=*) extra+=("$arg") ;;
       -h|--help)
         echo "Uso: glpi retro-apply --from=PATH.json [--apply] [--kinds=phase,item] [--codes=S4] [--limit=N]"
         echo "  Dry-run por padrao. Ordem: pais (S) depois filhos (P)."
@@ -1006,12 +1051,13 @@ main() {
       shift || true
       case "$sub" in
         get) cmd_ticket_get "$@" ;;
+        tasks) cmd_ticket_tasks "$@" ;;
         followup)
           local tid="${1:-}"
           shift || true
           cmd_ticket_followup "$tid" "$@"
           ;;
-        *) die "subcomando ticket invalido. Use: get | followup" ;;
+        *) die "subcomando ticket invalido. Use: get | tasks | followup" ;;
       esac
       ;;
     project)

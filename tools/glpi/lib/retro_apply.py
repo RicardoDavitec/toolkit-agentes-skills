@@ -65,6 +65,28 @@ def temporal_duration_args(c: dict) -> list[str]:
     return [f"--planned-duration={planned}", f"--effective-duration={effective}"]
 
 
+def parse_phase_projects(raw: str) -> dict[str, str]:
+    """F1:91,F2:92 — sessão e tarefa nascem no subprojeto da fase."""
+    out: dict[str, str] = {}
+    for part in (raw or "").split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if ":" not in part:
+            raise SystemExit(f"phase-projects invalido: {part} (use F1:91)")
+        key, value = part.split(":", 1)
+        key, value = key.strip().upper(), value.strip()
+        if not key or not value.isdigit():
+            raise SystemExit(f"phase-projects invalido: {part}")
+        out[key] = value
+    return out
+
+
+def phase_key(c: dict) -> str:
+    code = str(c.get("code") or "").upper()
+    return code.split(".", 1)[0]
+
+
 def sort_for_apply(cands: list[dict]) -> list[dict]:
     def key(c: dict):
         kind_order = 0 if c.get("kind") == "phase" else 1
@@ -151,7 +173,13 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0, help="Max candidatos (0=todos)")
     ap.add_argument("--codes", default="", help="Filtro CSV de codes (ex: S4,S4.P1)")
     ap.add_argument("--continue-on-error", action="store_true")
+    ap.add_argument(
+        "--phase-projects",
+        default="",
+        help="Mapa fase=subprojeto, ex. F1:91,F2:92. A fase não vira ProjectTask.",
+    )
     args = ap.parse_args()
+    phase_projects = parse_phase_projects(args.phase_projects)
 
     src = Path(args.from_path)
     if not src.is_file():
@@ -207,10 +235,30 @@ def main() -> int:
     ok = 0
     fail = 0
     for i, c in enumerate(selected, 1):
+        phase_id = phase_projects.get(phase_key(c), "")
+        if phase_id and c.get("kind") == "phase":
+            print(
+                f"[{i}/{len(selected)}] SKIP fase {c.get('code')} já é o subprojeto {phase_id}",
+                file=sys.stderr,
+            )
+            continue
         upsert_args = build_upsert_args(c, args.apply)
         if not upsert_args:
             print(f"[{i}/{len(selected)}] SKIP sem nome: {c.get('code')}", file=sys.stderr)
             continue
+        if phase_id:
+            kept = []
+            for arg in upsert_args:
+                if arg.startswith("--parent-code="):
+                    parent = arg.split("=", 1)[1].upper()
+                    if parent in phase_projects:
+                        continue
+                kept.append(arg)
+            upsert_args = kept
+            upsert_args.append(f"--project={phase_id}")
+            code = str(c.get("code") or "").upper()
+            if ".P" not in code:
+                upsert_args.append("--parent-task=0")
         label = f"{c.get('kind')}:{c.get('code') or '-'} ← {c.get('parent_code') or '-'}"
         print(f"\n=== [{i}/{len(selected)}] {label} | {c.get('title', '')[:60]} ===", file=sys.stderr)
         cmd = [glpi, *prefix, *upsert_args]

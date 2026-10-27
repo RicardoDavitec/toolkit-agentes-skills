@@ -120,10 +120,10 @@ Ordem, sempre com `--env=homolog` enquanto for ensaio, e `--apply` só depois de
 1. `glpi project create --name="Nome do produto" --apply`. Sem pai, o nome gravado é `GEP - Nome do produto - 0. [PAI]`.
 2. Grave o id em `.glpi/project.yaml` (`project_id` e, no ensaio, o bloco `homolog:`).
 3. Ligue o chamado ao projeto com `Itil_Project` (`itemtype` Ticket, `items_id`, `projects_id`). No teste o vínculo da homologação foi o registro 64.
-4. Crie as cinco fases como subprojetos, com `--parent-project` igual ao id do raiz e nomes `F1. Planejamento`, `F2. Implementação`, `F3. Testes Internos`, `F4. Homologação`, `F5. Aprovação`. Sem prefixo `GEP - `.
+4. Crie as cinco fases como subprojetos, com `--parent-project` igual ao id do raiz e nomes `F1. Planejamento`, `F2. Implementação`, `F3. Testes Internos`, `F4. Homologação`, `F5. Aprovação`. Sem prefixo `GEP - `. Cada fase leva Estado e Data de criação: sem `--state`, o CLI grava `gep1`; sem `--date`, grava o instante no campo `date`. "Última atualização" (`date_mod`) não substitui `date`.
 5. Não use `glpi seed-phases` com o template padrão: ele ainda semeia as sessões antigas como se fossem fases.
 6. Inclua o grupo Desenvolvimento no time do projeto raiz e de cada fase.
-7. Grave sessões e tarefas com `glpi task upsert`: sessão com `projecttasks_id` 0 na fase; tarefa com o id da sessão como pai. Leve `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration`. No planejado, a efetiva é 0.
+7. Grave sessões e tarefas com `glpi task upsert`: sessão com `projecttasks_id` 0 na fase; tarefa com o id da sessão como pai. Leve `plan_start_date`, `plan_end_date`, `planned_duration` e `effective_duration`. No planejado, a efetiva é 0. Na criação, sem `--state`, o estado é `gep1` e a Data de criação vai em `date_creation`. Atualizar uma tarefa já existente não recoloca esse estado nem reescreve `date_creation`.
 8. Abra a fase no GLPI, não a aba de tarefas do projeto raiz, para ver sessão e tarefa.
 
 O `glpi-retro-scan` completa, em todo `F`, `S` e `P`, início planejado, fim planejado, duração planejada e duração efetiva. Realizado sem data no plano busca o `git log`. Planejado sem data recebe um bloco de 2 h e duração efetiva 0. `glpi-temporal-fill` continua útil para preencher no GLPI uma lacuna que já tenha data real gravada.

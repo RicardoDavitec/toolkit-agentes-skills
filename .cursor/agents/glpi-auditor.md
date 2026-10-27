@@ -17,6 +17,8 @@ O Project raiz no preset PMF deve começar com `GEP - `. Fase, sessão e tarefa 
 
 Apontar F, S ou P sem `plan_start_date`, `plan_end_date`, `planned_duration` ou `effective_duration`. No realizado, a duração efetiva tem de vir do plano ou do git. No planejado, a duração efetiva é `0` e as duas datas planejadas são obrigatórias. Apontar descritivo vazio ou igual ao título. F5 no kit permanece Aprovação.
 
+Apontar Project (raiz ou fase) sem `projectstates_id` ou sem `date`, e ProjectTask sem `projectstates_id` ou sem `date_creation`. `date_mod` preenchido não cobre a Data de criação.
+
 ## Capacidades
 
 ```bash

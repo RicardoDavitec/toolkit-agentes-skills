@@ -82,6 +82,12 @@ preservando historico, tarefas, anexos e followups.
 - Gera relatorio em `docs/06_glpi/retro-scans/adopt-legacy-<ts>.md`.
 - `legacy.reverse_policy: forbid` -> a volta (F -> legado) e bloqueada.
 
+## Estado e data de criação
+
+Cada fase criada como Project leva `projectstates_id` e `date`. Sem estado explícito, usar `gep1` (GEP 1. Produto Backlog). Sem data explícita, `date` é o instante da criação. Esse campo é o "Data de criação" da ficha. `date_mod` é só "Última atualização".
+
+Se a topologia gravar a fase como ProjectTask, o estado segue a mesma regra e a data de criação vai em `date_creation`.
+
 ## Validacoes pre-apply
 
 - Soma dos pesos = 1.0 (tolerancia `weight_sum_tolerance`); senao aborta.

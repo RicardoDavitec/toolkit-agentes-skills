@@ -22,6 +22,8 @@ aconteceu) contem a mesma historia, com os mesmos codes F/S/P.
 
 No cabeçalho, o Project raiz do preset PMF aparece com o prefixo `GEP - ` (`naming.root`: `GEP - {produto} - 0. [PAI]`). Esse prefixo não entra em F, S nem P.
 
+Quando a cadeia cria raiz ou fase, a ficha leva Estado (`gep1` se não houver outro) e `date` (Data de criação). Sessão e tarefa levam Estado e `date_creation`. `date_mod` não substitui esses campos.
+
 Cada F, S e P do plano leva `plan_start` e `plan_end`. Item realizado também leva `real_start` e `real_end` vindos do commit ou da sessão. A duração planejada e a efetiva são gravadas no GLPI a partir dessas datas.
 
 ## Gate de plano (invariante do commit)

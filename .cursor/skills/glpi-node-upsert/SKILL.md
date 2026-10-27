@@ -68,7 +68,7 @@ Prefixo de produto opcional: `MEUPROD:F2.S4.P5` (multi-produto no mesmo clone).
 | `--parent-code` | code | auto | Override da resolucao automatica |
 | `--content` / `--describe` | str/@file | — | Corpo; `@arquivo` le do disco |
 | `--atoms` | str`;`str | — | Itens atomicos -> bullets no `content` |
-| `--state` | papel | — | `todo`\|`doing`\|`testing`\|`done`\|`closed` |
+| `--state` | papel | `gep1` na criação | `gep1` se o estado não vier; na atualização, estado ausente não é reescrito |
 | `--percent` | 0..100 | derivado | `percent_done` |
 | `--hours` | num | 2 | Peso `w_i` do rollup |
 | `--plan-start` / `--plan-end` | ISO | — | Janela planejada |

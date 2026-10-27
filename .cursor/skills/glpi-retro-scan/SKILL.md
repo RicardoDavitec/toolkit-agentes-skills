@@ -32,6 +32,8 @@ Execucao: `tools/glpi/bin/` **deste** clone (nunca de outro).
 Saida em `docs/06_glpi/retro-scans/scan-<YYYYMMDD-HHmm>.json` (+ `.md` legivel).
 O sufixo `_pack` **nao sobrescreve** o artefato anterior.
 
+A tabela do `.md` espelha o JSON: Plan ini e Plan fim só com a data (`plan_start`, `plan_end`); Real ini e Real fim com data e hora (`real_start`, `real_end`, `YYYY-MM-DD HH:MM`). Campo vazio fica vazio.
+
 ## Mapa de niveis
 
 | Nivel | GLPI | Fonte primaria |

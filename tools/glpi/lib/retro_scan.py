@@ -187,6 +187,37 @@ def _fmt_dt(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
+def _md_plan_day(value) -> str:
+    """Plan ini / Plan fim: só a data."""
+    return str(value or "").strip()[:10]
+
+
+def _md_real_hm(value) -> str:
+    """Real ini / Real fim: data e hora:minuto."""
+    raw = str(value or "").strip()
+    if len(raw) >= 16 and raw[10:11] == " ":
+        return raw[:16]
+    return raw[:10]
+
+
+def _md_candidate_table(cands: list[dict]) -> list[str]:
+    lines = [
+        "| Acao | Kind | Level | Code | Parent | Modulo | Atomos | Min | Titulo | Status | % | Plan ini | Plan fim | Real ini | Real fim |",
+        "|------|------|-------|------|--------|--------|--------|-----|--------|--------|---|----------|----------|----------|----------|",
+    ]
+    for c in cands[:300]:
+        level = c.get("level") or ("phase" if c.get("kind") == "phase" else "item")
+        lines.append(
+            f"| {c['action']} | {c.get('kind')} | {level} | "
+            f"{c.get('code') or ''} | {c.get('parent_code') or ''} | {c.get('module') or ''} | "
+            f"{c.get('atom_count') or ''} | {c.get('effort_minutes') or ''} | "
+            f"{c['title'][:36].replace('|', '/')} | {c['status_local']} | {c['percent_done']} | "
+            f"{_md_plan_day(c.get('plan_start'))} | {_md_plan_day(c.get('plan_end'))} | "
+            f"{_md_real_hm(c.get('real_start'))} | {_md_real_hm(c.get('real_end'))} |"
+        )
+    return lines
+
+
 def _empty_dates() -> dict:
     return {
         "plan_start": None,
@@ -946,6 +977,8 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
             # Bullets simples (Prioridade N — PLANO_PARALELO)
             mb = PLAIN_BULLET_RE.match(line)
             if mb and current_phase and not line.strip().startswith("|"):
+                if TEMPO_FIELD_RE.match(line):
+                    continue
                 bullet_title = mb.group(1).strip()
                 if len(bullet_title) < 8:
                     continue
@@ -1681,6 +1714,8 @@ def chain_temporal_windows_same_day(cands: list[dict]) -> None:
         if len(items) < 2:
             # único item do dia: estimar início se ainda colapsado
             c = items[0]
+            if (c.get("temporal_source") or "") in ("checklist-tempo", "checklist-comment"):
+                continue
             rs, re = _parse_dt(c.get("real_start")), _parse_dt(c.get("real_end"))
             if rs and re and rs >= re:
                 est = c.get("estimated_minutes") or DEFAULT_ESTIMATE_MINUTES
@@ -1696,6 +1731,9 @@ def chain_temporal_windows_same_day(cands: list[dict]) -> None:
         for idx, c in enumerate(items):
             end = _parse_dt(c.get("real_end"))
             if not end:
+                continue
+            if (c.get("temporal_source") or "") in ("checklist-tempo", "checklist-comment"):
+                prev_end = end
                 continue
             if idx == 0 or prev_end is None:
                 est = c.get("estimated_minutes") or DEFAULT_ESTIMATE_MINUTES
@@ -2487,17 +2525,8 @@ def main() -> int:
         f"sessoes e tarefas={report['items']}; "
         f"NEW={report['new']}, SKIP={report['skip']})",
         "",
-        "| Acao | Kind | Level | Code | Parent | Modulo | Atomos | Min | Titulo | Status | % | Plan ini | Real fim |",
-        "|------|------|-------|------|--------|--------|--------|-----|--------|--------|---|----------|----------|",
     ]
-    for c in cands[:300]:
-        lines.append(
-            f"| {c['action']} | {c.get('kind')} | {c.get('level') or ('phase' if c.get('kind')=='phase' else 'item')} | "
-            f"{c.get('code') or ''} | {c.get('parent_code') or ''} | {c.get('module') or ''} | "
-            f"{c.get('atom_count') or ''} | {c.get('effort_minutes') or ''} | "
-            f"{c['title'][:36].replace('|', '/')} | {c['status_local']} | {c['percent_done']} | "
-            f"{(c.get('plan_start') or '')[:10]} | {(c.get('real_end') or '')[:10]} |"
-        )
+    lines.extend(_md_candidate_table(cands))
     if pack_meta and pack_meta.get("by_module"):
         lines.extend(["", "## Esforco por modulo (pacotes)", ""])
         lines.append("| Modulo | Pacotes | Atomos | Horas |")

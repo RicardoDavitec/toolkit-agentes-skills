@@ -5,7 +5,7 @@ Fonte única em Markdown. Saídas: HTML (leitura principal) e PDF A4/A5, geradas
 
 ## Árvore (regenerada pelo build)
 
-<!-- ARVORE:INICIO -->
+<!-- Exemplo de ARVORE:INICIO -->
 docs/07_doc_academica/manuais/
 ├── README.md
 ├── ESTILO_MANUAIS.md

@@ -170,7 +170,7 @@ O atalho `scripts/atualizar-kit` do produto deve chamar o `atualizar_kit.py` do 
 
 ### 3. Adaptar a codificação antiga
 
-Códigos de plano antigo (`S0`, `S0.P1`, `M.DOCS`, `8.2.A`) passam a `F#.S#.P#` no plano vigente. Um título `## R1` de markdown antigo não é o projeto GLPI. Não grave o código longo de chamado e projeto em item, comentário ou nome de arquivo.
+Códigos de plano antigo (`S0`, `S0.P1`, `M.DOCS`, `8.2.A`) passam a `F#.S#.P#` no plano vigente (o `--pack` também emite só esses códigos). Um título `## R1` de markdown antigo não é o projeto GLPI. Não grave o código longo de chamado e projeto em item, comentário ou nome de arquivo.
 
 Mapeamento usado no ensaio do Bot_Pan, só como exemplo de leitura: linhas de auditoria, requisito, contingência, sala e perfil foram para a fase F2; demonstração foi para a fase F4. F1, F3 e F5 podem ficar sem sessão até existir trabalho nelas. A decisão de para qual fase vai cada plano antigo é do produto, revista antes de gravar.
 

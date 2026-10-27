@@ -18,7 +18,7 @@ O `retro-scan` preenche datas a partir de **commits** e de **checklists/planos s
 - status: `[x]`/`done` → `gep7`; `[~]` → `gep3`; `[ ]` → `gep1`; só commit → `gep7` (retro)
 - **após GEP:** `gep1` zera `real_start`/`real_end`; `gep3` zera `real_end` — **exceto** timestamps confirmados (`temporal_source` `plan` / `checklist-comment`)
 - **content (ProjectTask):** inclui `Repos:` (ids do workspace) + lista resumida de `Fontes:` (kind/path/repo); teto `GLPI_RETRO_CONTENT_MAX` (default 4000) e `GLPI_RETRO_CONTENT_MAX_SOURCES` (default 12)
-- **`--pack` (3 níveis):** Fase(S) → Pacote(P ~2h, código `….PKG{n}` se multi-átomo) → átomos só no `content`; saída `*_pack.json`
+- **`--pack` (3 níveis):** F (fase GEP) → S (sessão/semana) → P (~2h, código `F#.S#.P#`) → átomos só no `content`; saída `*_pack.json`. Sem `M.*` / `….PKG#`.
 
 ```bash
 ./tools/glpi/glpi retro-scan

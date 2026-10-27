@@ -94,7 +94,13 @@ Equivalencia por similaridade de mensagem + conjunto de arquivos
 
 Agrega atomos para que cada P atinja `--pack-target-min` minutos
 (default = `effort.task_hours_default` x 60). Evita centenas de P de 5 minutos.
-Atomos agregados ficam **só** no `content`.
+Atomos agregados ficam **só** no `content` e em `atoms_detail` (audit; sem obrigação dos 4 campos GLPI).
+
+**Códigos de saída (obrigatório):** só `F#`, `F#.S#` e `F#.S#.P#`.
+Não emitir `M.*`, `….PKG#`, `S0` solto nem título `R1` como nível.
+Mapeamento: módulo/path → fase GEP (`docs`→F1, apps→F2, infra→F4, …);
+semana ISO → sessão `F#.S#`; pacote → `F#.S#.P#`.
+`ensure_fsp` + `_fill_dates` / rollup preenchem datas e durações nos candidates.
 
 ## Fluxo canonico
 

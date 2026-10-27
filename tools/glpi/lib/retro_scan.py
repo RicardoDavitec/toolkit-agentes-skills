@@ -2127,6 +2127,25 @@ def _synthesize_package_title(atoms: list[dict], module: str, day: str) -> str:
     return f"[{module}] {first} (+{n - 1} atomos, {day})"[:255]
 
 
+def enrich_atom_audit_durations(atoms: list[dict]) -> None:
+    """Duracoes no atoms_detail (audit). Nao sao nivel GLPI; so transparencia."""
+    for atom in atoms:
+        plan_start = _parse_dt(atom.get("plan_start"))
+        plan_end = _parse_dt(atom.get("plan_end"))
+        real_start = _parse_dt(atom.get("real_start"))
+        real_end = _parse_dt(atom.get("real_end"))
+        if plan_start and plan_end and plan_end >= plan_start:
+            atom["planned_duration"] = int((plan_end - plan_start).total_seconds())
+        elif atom.get("duration_minutes") is not None:
+            atom["planned_duration"] = int(round(float(atom["duration_minutes"]) * 60))
+        else:
+            atom["planned_duration"] = None
+        if real_start and real_end and real_end >= real_start:
+            atom["effective_duration"] = int((real_end - real_start).total_seconds())
+        else:
+            atom["effective_duration"] = 0
+
+
 def pack_candidates(
     cands: list[dict],
     *,
@@ -2204,10 +2223,18 @@ def pack_candidates(
             return
         effort = sum(float(a.get("duration_minutes") or 0) for a in group)
         st, pct, state = _status_from_atoms(group)
-        starts = [_parse_dt(a.get("real_start") or a.get("plan_start")) for a in group]
-        ends = [_parse_dt(a.get("real_end") or a.get("plan_end")) for a in group]
-        starts_v = [d for d in starts if d]
-        ends_v = [d for d in ends if d]
+        plan_starts = [
+            _parse_dt(a.get("plan_start")) or _parse_dt(a.get("real_start")) for a in group
+        ]
+        plan_ends = [
+            _parse_dt(a.get("plan_end")) or _parse_dt(a.get("real_end")) for a in group
+        ]
+        real_starts = [_parse_dt(a.get("real_start")) for a in group]
+        real_ends = [_parse_dt(a.get("real_end")) for a in group]
+        plan_starts_v = [d for d in plan_starts if d]
+        plan_ends_v = [d for d in plan_ends if d]
+        real_starts_v = [d for d in real_starts if d]
+        real_ends_v = [d for d in real_ends if d]
         preferred = None
         if len(group) == 1:
             preferred = _canonical_task_code(group[0].get("code"), phase)
@@ -2245,8 +2272,8 @@ def pack_candidates(
             "status_local": st,
             "percent_done": pct,
             "state": state,
-            "plan_start": _fmt_dt(min(starts_v)) if starts_v else None,
-            "plan_end": _fmt_dt(max(ends_v)) if ends_v else None,
+            "plan_start": _fmt_dt(min(plan_starts_v)) if plan_starts_v else None,
+            "plan_end": _fmt_dt(max(plan_ends_v)) if plan_ends_v else None,
             "real_start": None,
             "real_end": None,
             "temporal_source": "pack",
@@ -2261,16 +2288,16 @@ def pack_candidates(
             "noise_package": noise_package,
             "_atoms": group,
         }
-        if starts_v and st in ("done", "partial"):
-            pkg["real_start"] = _fmt_dt(min(starts_v))
-        if ends_v and st == "done":
-            pkg["real_end"] = _fmt_dt(max(ends_v))
+        if st in ("done", "partial", "archived") and real_starts_v:
+            pkg["real_start"] = _fmt_dt(min(real_starts_v))
+            if real_ends_v:
+                pkg["real_end"] = _fmt_dt(max(real_ends_v))
+            elif st == "done" and plan_ends_v:
+                pkg["real_end"] = _fmt_dt(max(plan_ends_v))
         if not pkg.get("plan_start") and pkg.get("real_start"):
             pkg["plan_start"] = pkg["real_start"]
-        if not pkg.get("plan_end") and pkg.get("real_end"):
-            pkg["plan_end"] = pkg["real_end"]
-        elif not pkg.get("plan_end") and ends_v:
-            pkg["plan_end"] = _fmt_dt(max(ends_v))
+        if not pkg.get("plan_end") and (pkg.get("real_end") or plan_ends_v):
+            pkg["plan_end"] = pkg.get("real_end") or _fmt_dt(max(plan_ends_v))
         raw_groups.append(pkg)
 
     for (phase, week, module, day), lst in sorted(buckets.items()):
@@ -2389,6 +2416,7 @@ def pack_candidates(
 
     apply_cands = sorted(all_phases + packages, key=_cand_key)
     atoms_audit = work + noise
+    enrich_atom_audit_durations(atoms_audit)
     effort_total = sum(float(p.get("effort_minutes") or 0) for p in packages)
     meta = {
         "mode": "on",

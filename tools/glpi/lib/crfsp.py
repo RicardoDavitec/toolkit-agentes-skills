@@ -727,11 +727,23 @@ def _fill_dates(cands: list[dict], repo_root: Path) -> None:
             plan_end = real_end
         if realized and plan_start and plan_end and plan_end <= plan_start:
             plan_end = plan_start + timedelta(hours=2)
-        if not realized and (plan_start is None or plan_end is None or plan_end <= plan_start):
+        source = str(cand.get("temporal_source") or "")
+        # Pack/commit já trouxe janela válida: não sobrescrever com slot estipulado.
+        pack_kept = source in ("pack", "pack-lifecycle", "children", "commit-chain", "commit-session") and bool(
+            plan_start and plan_end and plan_end > plan_start
+        )
+        if not realized and not pack_kept and (
+            plan_start is None or plan_end is None or plan_end <= plan_start
+        ):
             plan_start, plan_end = slots.take()
             cand["temporal_source"] = "stipulated"
             real_start = None
             real_end = None
+        if not realized and pack_kept:
+            # Planejado com evidência de pack: efetiva 0 até realizar.
+            if status == "pending":
+                real_start = None
+                real_end = None
         if plan_start:
             cand["plan_start"] = _fmt(plan_start)
         if plan_end:
@@ -739,6 +751,9 @@ def _fill_dates(cands: list[dict], repo_root: Path) -> None:
         if realized and real_start and real_end:
             cand["real_start"] = _fmt(real_start)
             cand["real_end"] = _fmt(real_end)
+        elif not realized:
+            cand["real_start"] = None
+            cand["real_end"] = None
         planned, effective = _durations(plan_start, plan_end, real_start, real_end, realized and bool(real_end))
         cand["planned_duration"] = planned
         cand["effective_duration"] = effective
@@ -768,12 +783,50 @@ def _rollup_windows(cands: list[dict]) -> None:
                 cand["real_start"] = _fmt(real_start)
                 cand["real_end"] = _fmt(real_end)
                 cand["effective_duration"] = int((real_end - real_start).total_seconds())
+                cand["temporal_source"] = "children"
             else:
                 cand["effective_duration"] = 0
+                if cand.get("temporal_source") in (None, "", "stipulated"):
+                    cand["temporal_source"] = "children"
             start = _parse_dt(cand["plan_start"])
             end = _parse_dt(cand["plan_end"])
             if start and end and end > start:
                 cand["planned_duration"] = int((end - start).total_seconds())
+
+
+def _rollup_status(cands: list[dict]) -> None:
+    """Propaga status/percent/% GEP dos filhos para S e F."""
+    by_parent: dict[str, list[dict]] = {}
+    for cand in cands:
+        parent = str(cand.get("parent_code") or "").upper()
+        if parent:
+            by_parent.setdefault(parent, []).append(cand)
+    for level in ("S", "F"):
+        for cand in cands:
+            if cand.get("level") != level:
+                continue
+            kids = [
+                k
+                for k in by_parent.get(str(cand.get("code") or "").upper(), [])
+                if k.get("level") in ("S", "P")
+            ]
+            if not kids:
+                continue
+            statuses = [str(k.get("status_local") or "pending").lower() for k in kids]
+            if all(s in ("done", "archived") for s in statuses):
+                cand["status_local"] = "done"
+                cand["percent_done"] = 100
+                cand["state"] = "gep7"
+            elif all(s == "pending" for s in statuses):
+                cand["status_local"] = "pending"
+                cand["percent_done"] = 0
+                cand["state"] = cand.get("state") or "gep1"
+            else:
+                pcts = [int(k.get("percent_done") or 0) for k in kids]
+                avg = int(round(sum(pcts) / len(pcts))) if pcts else 50
+                cand["status_local"] = "partial"
+                cand["percent_done"] = avg
+                cand["state"] = "gep3"
 
 
 def ensure_fsp(cands: list[dict], repo_root: Path) -> tuple[list[dict], list[dict]]:
@@ -852,6 +905,9 @@ def ensure_fsp(cands: list[dict], repo_root: Path) -> tuple[list[dict], list[dic
             }
         )
     _fill_dates(kept, repo_root)
+    _rollup_windows(kept)
+    _rollup_status(kept)
+    # Segundo passe: S/F que saíram de pending herdam real_* dos filhos.
     _rollup_windows(kept)
     return kept, legacy
 

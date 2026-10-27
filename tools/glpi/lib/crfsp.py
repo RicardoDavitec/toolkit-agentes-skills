@@ -147,6 +147,8 @@ def _git_bounds(repo: Path, token: str, cache: dict) -> tuple[datetime, datetime
             stamps.append(datetime.fromisoformat(line).replace(tzinfo=None))
         except ValueError:
             continue
+    drop = _rename_day(repo)
+    stamps = [s for s in stamps if drop is None or s.date().isoformat() != drop]
     found = (min(stamps), max(stamps)) if stamps else None
     cache[token] = found
     return found
@@ -177,7 +179,519 @@ class _Slots:
             return start, end
 
 
+_RENAME_SHA = "96fa03f"
+_F_CODE_RE = re.compile(r"(?<![\w.])(F\d+(?:\.S\d+(?:\.P\d+)?)?)(?![\w.])")
+_LEGACY_CODE_RE = re.compile(
+    r"(?<![\w.])((?:RF|CO|SL|[SRIHE])\d+(?:\.[Pp]\d+[a-z]?)?)(?![\w.])"
+)
+_ESTIMATE_MINUTES = int(os.environ.get("GLPI_RETRO_ESTIMATE_MINUTES", "60"))
+_EXPLICIT_SOURCES = ("checklist-tempo", "checklist-comment")
+
+
+def _rename_cutoff(repo: Path) -> str | None:
+    """Commit de rename dos códigos, só se existir neste repositório."""
+    sha = (os.environ.get("GLPI_RENAME_SHA") or _RENAME_SHA).strip()
+    if not sha:
+        return None
+    proc = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "--verify", "--quiet", sha + "^{commit}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return sha if proc.returncode == 0 else None
+
+
+def _rename_day(repo: Path) -> str | None:
+    sha = _rename_cutoff(repo)
+    if not sha:
+        return None
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", str(repo), "log", "-1", "--pretty=%cI", sha],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        return datetime.fromisoformat(out).date().isoformat()
+    except (subprocess.CalledProcessError, ValueError):
+        return None
+
+
+def _norm_title(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", (text or "").lower())[:48]
+
+
+def _legacy_map(repo: Path) -> dict[str, str]:
+    """Código F atual → código que o git e as sessões ainda citam."""
+    cutoff = _rename_cutoff(repo)
+    if not cutoff:
+        return {}
+    files = subprocess.check_output(
+        ["git", "-C", str(repo), "diff", "--name-only", f"{cutoff}^", "HEAD", "--", "docs/05_progresso/planos_ativos"],
+        text=True,
+        stderr=subprocess.DEVNULL,
+    ).split()
+    bold = re.compile(r"\*\*([A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)\*\*\s*(.*)$")
+    out: dict[str, str] = {}
+
+    def extract(rev: str, path: str) -> list[tuple[str, str]]:
+        try:
+            text = subprocess.check_output(
+                ["git", "-C", str(repo), "show", f"{rev}:{path}"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+        except subprocess.CalledProcessError:
+            return []
+        rows = []
+        for line in text.splitlines():
+            match = bold.search(line)
+            if not match:
+                continue
+            if line.lstrip()[:1] in "-*|":
+                rows.append((match.group(1), _norm_title(match.group(2))))
+        return rows
+
+    for path in files:
+        if not path.endswith(".md"):
+            continue
+        old = extract(f"{cutoff}^", path)
+        new = extract("HEAD", path)
+        used: set[int] = set()
+        for code, title in old:
+            if not title:
+                continue
+            for index, (code2, title2) in enumerate(new):
+                if index in used or title != title2:
+                    continue
+                used.add(index)
+                if code != code2 and FSP_RE.fullmatch(code2):
+                    out[code2.upper()] = code
+                break
+    return out
+
+
+def _plan_windows(repo: Path) -> dict[str, tuple[datetime, datetime]]:
+    windows: dict[str, tuple[datetime, datetime]] = {}
+    root = repo / "docs/05_progresso/planos_ativos"
+    if not root.is_dir():
+        return windows
+    for path in root.glob("*.md"):
+        headers: list[str] | None = None
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line.startswith("|"):
+                headers = None
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            low = [c.lower() for c in cells]
+            if "plan ini" in low and ("code" in low or "id" in low or "código" in low or "codigo" in low):
+                headers = low
+                continue
+            if not headers or len(cells) < len(headers):
+                continue
+            if set(low) & {"code", "id", "titulo", "título", "plan ini"}:
+                continue
+            got = {headers[i]: cells[i] for i in range(min(len(headers), len(cells)))}
+            code = (got.get("code") or got.get("id") or got.get("código") or got.get("codigo") or "").upper()
+            if not FSP_RE.fullmatch(code):
+                continue
+            start = _parse_dt(got.get("plan ini"))
+            end = _parse_dt(got.get("plan fim"))
+            if start and end and end > start:
+                windows[code] = (start, end)
+    return windows
+
+
+def _close_commits(repo: Path) -> dict[str, tuple[str, datetime]]:
+    """Primeiro commit que marcou o código legado como feito. Ignora o rename, se houver."""
+    cutoff = _rename_cutoff(repo)
+    cmd = [
+        "git", "-C", str(repo), "log", "--reverse", "-p",
+        "--pretty=format:%H%x00%cI",
+    ]
+    if cutoff:
+        cmd.append(cutoff + "^")
+    cmd.extend(["--", "docs/05_progresso/planos_ativos"])
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        text=True,
+        stderr=subprocess.DEVNULL,
+    )
+    closed: dict[tuple[str, str], tuple[str, datetime]] = {}
+    sha = ""
+    path = ""
+    when: datetime | None = None
+    assert proc.stdout is not None
+    for raw in proc.stdout:
+        line = raw.rstrip("\n")
+        if line.startswith("diff --git "):
+            path = line.split(" b/", 1)[-1].strip()
+            continue
+        if "\x00" in line and not line.startswith(("+", "-", " ", "@", "d", "i")):
+            sha, iso = line.split("\x00", 1)
+            if cutoff and sha.startswith(cutoff):
+                sha = ""
+                when = None
+                continue
+            try:
+                when = datetime.fromisoformat(iso.strip()).replace(tzinfo=None)
+            except ValueError:
+                when = None
+            continue
+        if not sha or when is None or not path or not line.startswith("+") or line.startswith("+++"):
+            continue
+        body = line[1:]
+        if not re.search(r"\[x\]", body, re.I):
+            continue
+        found: list[str] = []
+        bold = re.search(r"\*\*([A-Za-z][A-Za-z0-9]*(?:\.[A-Za-z0-9]+)*)\*\*", body)
+        if bold and re.search(r"\[x\]", body[: bold.start()], re.I):
+            found.append(bold.group(1))
+        elif body.lstrip().startswith("|"):
+            cells = [re.sub(r"[*`]", "", c).strip() for c in body.strip().strip("|").split("|")]
+            token = cells[0] if cells else ""
+            if re.fullmatch(r"[A-Za-z][A-Za-z0-9.]*(?:\.[A-Za-z0-9]+)*", token):
+                if any(re.search(r"\[x\]", c, re.I) for c in cells):
+                    found.append(token)
+        for code in found:
+            key = (path, code.upper())
+            if key not in closed:
+                closed[key] = (sha, when)
+    proc.wait()
+    return closed
+
+
+def _commit_times(repo: Path) -> list[datetime]:
+    cmd = ["git", "-C", str(repo), "log", "--pretty=%cI"]
+    cutoff = _rename_cutoff(repo)
+    if cutoff:
+        cmd.append(cutoff + "^")
+    out = subprocess.check_output(
+        cmd,
+        text=True,
+        stderr=subprocess.DEVNULL,
+    )
+    times = []
+    for line in out.splitlines():
+        try:
+            times.append(datetime.fromisoformat(line.strip()).replace(tzinfo=None))
+        except ValueError:
+            continue
+    times.sort()
+    return times
+
+
+def _session_index(repo: Path) -> dict[str, list[datetime]]:
+    index: dict[str, list[datetime]] = {}
+    root = repo / "docs/05_progresso/geral"
+    enc = re.compile(r"Encerrada:\s*(\d{2})/(\d{2})/(\d{4})\s+(\d{2}):(\d{2})")
+    for path in root.glob("SESSAO_*.md"):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        found = enc.search(text)
+        stamp = None
+        if found:
+            day, month, year, hour, minute = found.groups()
+            stamp = datetime(int(year), int(month), int(day), int(hour), int(minute))
+        else:
+            name = re.search(r"SESSAO_(\d{4})-(\d{2})-(\d{2})", path.name)
+            if not name:
+                continue
+            year, month, day = name.groups()
+            stamp = datetime(int(year), int(month), int(day), 18, 0)
+        for code in _LEGACY_CODE_RE.findall(text):
+            index.setdefault(code.upper(), []).append(stamp)
+    return index
+
+
+def _prev_same_day(times: list[datetime], moment: datetime) -> datetime | None:
+    prev = None
+    for item in times:
+        if item >= moment:
+            break
+        if item.date() == moment.date():
+            prev = item
+    return prev
+
+
+def _loose_dt(text: str) -> datetime | None:
+    match = re.match(r"(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?", (text or "").strip())
+    if not match:
+        return None
+    year, month, day, hour, minute = match.groups()
+    return datetime(int(year), int(month), int(day), int(hour or 0), int(minute or 0))
+
+
+def _codes_in(text: str) -> set[str]:
+    found = {c.upper() for c in _F_CODE_RE.findall(text or "")}
+    found.update(c.upper() for c in _LEGACY_CODE_RE.findall(text or ""))
+    return found
+
+
+def _pendency_index(repo: Path) -> dict[str, tuple[datetime, datetime]]:
+    """Pendência [x] que cita um code: inserido → corrigido."""
+    path = repo / "docs/05_progresso/pendencias/CHECKLIST_PENDENCIAS.md"
+    if not path.is_file():
+        return {}
+    out: dict[str, tuple[datetime, datetime]] = {}
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.startswith("| PEND-"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) < 6 or "[x]" not in cells[1].lower():
+            continue
+        start = _loose_dt(cells[3])
+        end = _loose_dt(cells[4])
+        if not start or not end or end <= start:
+            continue
+        for code in _codes_in(cells[5]):
+            out.setdefault(code, (start, end))
+    return out
+
+
+def _note_stamp(path: Path) -> datetime | None:
+    name = path.name
+    iso = re.search(r"(20\d{2})-(\d{2})-(\d{2})", name)
+    if iso:
+        year, month, day = (int(p) for p in iso.groups())
+        return datetime(year, month, day, 9, 0)
+    short = re.search(r"(?<!\d)(\d{2})-(\d{2})-(\d{2})(?!\d)", name)
+    if short:
+        day, month, year = (int(p) for p in short.groups())
+        return datetime(2000 + year, month, day, 9, 0)
+    return None
+
+
+def _note_index(repo: Path) -> dict[str, tuple[datetime, datetime]]:
+    """Nota em implementação ou operação que cita um code. Janela de 60 min."""
+    out: dict[str, tuple[datetime, datetime]] = {}
+    roots = [
+        repo / "docs/03_implementacao",
+        repo / "docs/04_operacao",
+    ]
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*.md"):
+            stamp = _note_stamp(path)
+            if stamp is None:
+                continue
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            end = stamp + timedelta(minutes=_ESTIMATE_MINUTES)
+            for code in _codes_in(text):
+                out.setdefault(code, (stamp, end))
+    return out
+
+
+def _explicit_real(cand: dict) -> bool:
+    if str(cand.get("temporal_source") or "") not in _EXPLICIT_SOURCES:
+        return False
+    return bool(_parse_dt(cand.get("real_start")) and _parse_dt(cand.get("real_end")))
+
+
+def correlate_realized(cands: list[dict], repo_root: Path) -> int:
+    """Datas reais das tarefas feitas: commit que fechou + sessão do dia.
+
+    Várias tarefas no mesmo commit dividem o intervalo desde o commit anterior
+    do dia (ou 60 min, se o commit abre o dia / o vão passa de 6 h).
+    """
+    if not (repo_root / ".git").exists():
+        return 0
+    legacy = _legacy_map(repo_root)
+    windows = _plan_windows(repo_root)
+    closed = _close_commits(repo_root)
+    times = _commit_times(repo_root)
+    sessions = _session_index(repo_root)
+    pendencies = _pendency_index(repo_root)
+    notes = _note_index(repo_root)
+
+    groups: dict[str, list[dict]] = {}
+    for cand in cands:
+        status = str(cand.get("status_local") or cand.get("status") or "").lower()
+        if status not in ("done", "archived"):
+            continue
+        if cand.get("level") not in ("S", "P"):
+            continue
+        if _explicit_real(cand):
+            continue
+        code = str(cand.get("code") or "").upper()
+        old = legacy.get(code, "")
+        src = ""
+        for source in cand.get("sources") or []:
+            if source.get("path"):
+                src = str(source["path"])
+                break
+        hit = closed.get((src, old)) or closed.get((src, code))
+        if not hit:
+            continue
+        sha, _when = hit
+        cand["_close_sha"] = sha
+        cand["_close_at"] = hit[1]
+        cand["_legacy"] = old
+        groups.setdefault(sha, []).append(cand)
+
+    def sort_key(cand: dict) -> int:
+        for source in cand.get("sources") or []:
+            if source.get("line"):
+                return int(source["line"])
+        return 0
+
+    later_by_sha: set[str] = set()
+    by_day: dict = {}
+    for sha, items in groups.items():
+        by_day.setdefault(items[0]["_close_at"].date(), []).append(items[0]["_close_at"])
+    for sha, items in groups.items():
+        moment = items[0]["_close_at"]
+        if any(other > moment for other in by_day.get(moment.date(), [])):
+            later_by_sha.add(sha)
+
+    changed = 0
+    placed: set[str] = set()
+    for sha, items in groups.items():
+        moment = items[0]["_close_at"]
+        end = moment
+        if sha not in later_by_sha:
+            mentioned = []
+            for cand in items:
+                old = cand.get("_legacy") or ""
+                mentioned.extend(sessions.get(old, []))
+                mentioned.extend(sessions.get(str(cand.get("code") or "").upper(), []))
+            same_day = [s for s in mentioned if s.date() == moment.date() and s > moment]
+            if same_day:
+                latest = max(same_day)
+                if latest - moment <= timedelta(hours=3):
+                    end = latest
+        prev = _prev_same_day(times, moment)
+        if prev and timedelta(0) < moment - prev <= timedelta(hours=6):
+            start = prev
+        else:
+            start = end - timedelta(minutes=_ESTIMATE_MINUTES)
+        if start >= end:
+            start = end - timedelta(minutes=_ESTIMATE_MINUTES)
+        parents = {str(c.get("code") or "").upper() for c in items}
+        tasks = [
+            c for c in items
+            if c.get("level") == "P" or str(c.get("parent_code") or "").upper() not in parents and not any(
+                str(o.get("parent_code") or "").upper() == str(c.get("code") or "").upper() for o in items
+            )
+        ]
+        if not tasks:
+            tasks = items
+        tasks.sort(key=sort_key)
+        budget = end - start
+        slice_td = budget / len(tasks)
+        for index, cand in enumerate(tasks):
+            real_start = start + slice_td * index
+            real_end = start + slice_td * (index + 1)
+            code = str(cand.get("code") or "").upper()
+            table = windows.get(code)
+            if table and table[0] <= real_end:
+                plan_start, plan_end = table
+                if plan_end < real_end:
+                    plan_end = real_end
+            else:
+                plan_start, plan_end = real_start, real_end
+            cand["plan_start"] = _fmt(plan_start)
+            cand["plan_end"] = _fmt(plan_end)
+            cand["real_start"] = _fmt(real_start)
+            cand["real_end"] = _fmt(real_end)
+            cand["temporal_source"] = "commit-session" if end != moment else "commit-chain"
+            cand["planned_duration"] = int((plan_end - plan_start).total_seconds())
+            cand["effective_duration"] = max(0, int((real_end - real_start).total_seconds()))
+            placed.add(code)
+            changed += 1
+
+    for cand in cands:
+        status = str(cand.get("status_local") or cand.get("status") or "").lower()
+        if status not in ("done", "archived"):
+            continue
+        if cand.get("level") not in ("S", "P"):
+            continue
+        code = str(cand.get("code") or "").upper()
+        if code in placed or _explicit_real(cand):
+            if _explicit_real(cand):
+                placed.add(code)
+            continue
+        old = str(cand.get("_legacy") or legacy.get(code, ""))
+        hit = pendencies.get(old) or pendencies.get(code)
+        source = "pendency"
+        if not hit:
+            hit = notes.get(old) or notes.get(code)
+            source = "note"
+        if not hit:
+            continue
+        real_start, real_end = hit
+        table = windows.get(code)
+        if table and table[0] <= real_end:
+            plan_start, plan_end = table
+            if plan_end < real_end:
+                plan_end = real_end
+        else:
+            plan_start, plan_end = real_start, real_end
+        cand["plan_start"] = _fmt(plan_start)
+        cand["plan_end"] = _fmt(plan_end)
+        cand["real_start"] = _fmt(real_start)
+        cand["real_end"] = _fmt(real_end)
+        cand["temporal_source"] = source
+        cand["planned_duration"] = int((plan_end - plan_start).total_seconds())
+        cand["effective_duration"] = max(0, int((real_end - real_start).total_seconds()))
+        placed.add(code)
+        changed += 1
+
+    by_parent: dict[str, list[dict]] = {}
+    for cand in cands:
+        parent = str(cand.get("parent_code") or "").upper()
+        if parent:
+            by_parent.setdefault(parent, []).append(cand)
+    for cand in cands:
+        if cand.get("level") != "S":
+            continue
+        status = str(cand.get("status_local") or cand.get("status") or "").lower()
+        if status not in ("done", "archived"):
+            continue
+        if _explicit_real(cand):
+            continue
+        kids = [
+            k for k in by_parent.get(str(cand.get("code") or "").upper(), [])
+            if str(k.get("code") or "").upper() in placed
+        ]
+        if not kids:
+            continue
+        plan_start = min(_parse_dt(k["plan_start"]) for k in kids)
+        plan_end = max(_parse_dt(k["plan_end"]) for k in kids)
+        real_start = min(_parse_dt(k["real_start"]) for k in kids)
+        real_end = max(_parse_dt(k["real_end"]) for k in kids)
+        cand["plan_start"] = _fmt(plan_start)
+        cand["plan_end"] = _fmt(plan_end)
+        cand["real_start"] = _fmt(real_start)
+        cand["real_end"] = _fmt(real_end)
+        cand["temporal_source"] = "children"
+        cand["planned_duration"] = int((plan_end - plan_start).total_seconds())
+        cand["effective_duration"] = int((real_end - real_start).total_seconds())
+        placed.add(str(cand.get("code") or "").upper())
+        changed += 1
+    for cand in cands:
+        cand.pop("_close_sha", None)
+        cand.pop("_close_at", None)
+        cand.pop("_legacy", None)
+    return changed
+
+
+def _durations(plan_start, plan_end, real_start, real_end, realized: bool) -> tuple[int, int]:
+    """Segundos. Efetiva fica 0 enquanto não houver início e fim reais."""
+    planned = EFFORT_SECONDS
+    if plan_start and plan_end and plan_end > plan_start:
+        planned = int((plan_end - plan_start).total_seconds())
+    effective = 0
+    if realized and real_start and real_end and real_end >= real_start:
+        effective = max(0, int((real_end - real_start).total_seconds()))
+    return planned, effective
+
+
 def _fill_dates(cands: list[dict], repo_root: Path) -> None:
+    correlate_realized(cands, repo_root)
     cache: dict = {}
     slots = _Slots()
     for cand in cands:
@@ -189,7 +703,20 @@ def _fill_dates(cands: list[dict], repo_root: Path) -> None:
         plan_end = _parse_dt(cand.get("plan_end"))
         real_start = _parse_dt(cand.get("real_start"))
         real_end = _parse_dt(cand.get("real_end"))
-        if realized and (real_start is None or real_end is None):
+        if (
+            realized
+            and status != "partial"
+            and cand.get("temporal_source") not in (
+                "commit-chain",
+                "commit-session",
+                "children",
+                "checklist-tempo",
+                "checklist-comment",
+                "pendency",
+                "note",
+            )
+            and (real_start is None or real_end is None)
+        ):
             bounds = _git_bounds(repo_root, str(cand.get("code") or ""), cache)
             if bounds:
                 real_start, real_end = bounds
@@ -212,12 +739,7 @@ def _fill_dates(cands: list[dict], repo_root: Path) -> None:
         if realized and real_start and real_end:
             cand["real_start"] = _fmt(real_start)
             cand["real_end"] = _fmt(real_end)
-        planned = EFFORT_SECONDS
-        if plan_start and plan_end and plan_end > plan_start:
-            planned = int((plan_end - plan_start).total_seconds())
-        effective = 0
-        if realized and real_start and real_end and real_end >= real_start:
-            effective = int((real_end - real_start).total_seconds())
+        planned, effective = _durations(plan_start, plan_end, real_start, real_end, realized and bool(real_end))
         cand["planned_duration"] = planned
         cand["effective_duration"] = effective
 

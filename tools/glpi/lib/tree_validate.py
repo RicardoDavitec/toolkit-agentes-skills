@@ -50,15 +50,34 @@ def decide_rule(rule, only, skip):
     return True
 
 
+def _normalize_candidate(item):
+    if not isinstance(item, dict):
+        return item
+    item = dict(item)
+    code = str(item.get("code") or "").strip()
+    title = str(item.get("title") or item.get("name") or "").strip()
+    if code and title and f"[{code}]" not in title:
+        item["name"] = f"[{code}] {title}"[:255]
+    for src, dst in (
+        ("plan_start", "plan_start_date"),
+        ("plan_end", "plan_end_date"),
+        ("real_start", "real_start_date"),
+        ("real_end", "real_end_date"),
+    ):
+        if item.get(dst) in (None, "") and item.get(src):
+            item[dst] = item[src]
+    return item
+
+
 def file_to_payload(path):
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(path)
     data = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(data, dict):
-        for key in ("tasks", "items", "nodes"):
+        for key in ("tasks", "items", "nodes", "candidates"):
             if key in data and isinstance(data[key], list):
-                return data[key]
+                return [_normalize_candidate(item) for item in data[key]]
     if isinstance(data, list):
         return data
     raise ValueError("JSON precisa ser lista ou conter 'tasks'/'items'/'nodes'")
@@ -187,6 +206,12 @@ def validate_items(items, strict=False, only=None, skip=None):
                         "warning",
                         f"campo temporal ausente ({field}): {code or name!r}",
                     )
+
+        if decide_rule("V24", only, skip):
+            content = str(item.get("content") or "").strip()
+            bare = re.sub(r"^\[[^\]]+\]\s*", "", name).strip()
+            if code and (not content or content == bare or content == name):
+                add("V24", "error", f"descritivo vazio ou igual ao titulo: {code}")
 
         if decide_rule("V06", only, skip):
             percent = item.get("percent_done")

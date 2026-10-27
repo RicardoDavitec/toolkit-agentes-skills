@@ -49,6 +49,21 @@ GLPI_ATTR_RE = re.compile(
     r"""(plan_start|plan_end|real_start|real_end|temporal_source)\s*=\s*["']([^"']+)["']""",
     re.IGNORECASE,
 )
+# Campos visíveis, logo abaixo do checkbox. Vazio permanece vazio.
+#   - inicio: 2026-10-27 07:14
+#   - fim: 2026-10-27 11:00
+#   - inicio_real:
+#   - fim_real:
+TEMPO_FIELD_RE = re.compile(
+    r"^\s*-\s*(inicio_real|fim_real|inicio|fim)\s*:\s*(.*?)\s*$",
+    re.IGNORECASE,
+)
+TEMPO_FIELD_KEY = {
+    "inicio": "plan_start",
+    "fim": "plan_end",
+    "inicio_real": "real_start",
+    "fim_real": "real_end",
+}
 # Bot_Pan / planos genéricos (sem heading SAMU "Fase N (S4)")
 CHECKBOX_WITH_CODE_RE = re.compile(
     r"^\s*[-*]\s*\[([ xX~tT])\]\s+(?:\*\*)?"
@@ -208,10 +223,6 @@ def _parse_glpi_html_comment(text: str) -> dict | None:
         dates["plan_start"] = dates["real_start"]
     if dates.get("real_end") and not dates.get("plan_end"):
         dates["plan_end"] = dates["real_end"]
-    if dates.get("plan_start") and not dates.get("real_start"):
-        dates["real_start"] = dates["plan_start"]
-    if dates.get("plan_end") and not dates.get("real_end"):
-        dates["real_end"] = dates["plan_end"]
     return dates
 
 
@@ -219,19 +230,64 @@ def _strip_glpi_html_comment(text: str) -> str:
     return GLPI_HTML_COMMENT_RE.sub("", text or "").strip()
 
 
+def _tempo_fields_after(lines: list[str], idx: int) -> tuple[dict, set[str]] | None:
+    """Lê inicio/fim/inicio_real/fim_real nas linhas seguintes ao checkbox."""
+    found = False
+    dates = _empty_dates()
+    explicit_empty: set[str] = set()
+    for j in range(idx + 1, min(idx + 8, len(lines))):
+        line = lines[j]
+        if not line.strip():
+            continue
+        if GLPI_HTML_COMMENT_RE.search(line) and not CHECK_RE.match(line):
+            continue
+        m = TEMPO_FIELD_RE.match(line)
+        if not m:
+            break
+        found = True
+        key = TEMPO_FIELD_KEY[m.group(1).lower()]
+        raw = m.group(2).strip()
+        if raw in {"", "—", "-", "–"}:
+            explicit_empty.add(key)
+            dates[key] = None
+        else:
+            dates[key] = _normalize_ts(raw)
+    if not found:
+        return None
+    if any(dates.get(k) for k in ("plan_start", "plan_end", "real_start", "real_end")):
+        dates["temporal_source"] = "checklist-tempo"
+    return dates, explicit_empty
+
+
 def _dates_from_checkbox_context(lines: list[str], idx: int) -> dict | None:
-    """Lê meta GLPI na mesma linha do checkbox ou na linha imediatamente seguinte."""
+    """Lê os quatro campos visíveis e, na falta deles, o comentário glpi."""
     if idx < 0 or idx >= len(lines):
         return None
-    same = _parse_glpi_html_comment(lines[idx])
-    if same:
-        return same
-    if idx + 1 < len(lines):
-        nxt = lines[idx + 1]
-        # só aceita linha seguinte se for o comentário (ou só whitespace + comentário)
-        if GLPI_HTML_COMMENT_RE.search(nxt) and not CHECK_RE.match(nxt):
-            return _parse_glpi_html_comment(nxt)
-    return None
+    dates = _parse_glpi_html_comment(lines[idx])
+    if dates is None:
+        for j in range(idx + 1, min(idx + 6, len(lines))):
+            nxt = lines[j]
+            if not nxt.strip():
+                continue
+            if GLPI_HTML_COMMENT_RE.search(nxt) and not CHECK_RE.match(nxt):
+                dates = _parse_glpi_html_comment(nxt)
+            break
+    tempo = _tempo_fields_after(lines, idx)
+    if tempo is None:
+        return dates
+    tempo_dates, explicit_empty = tempo
+    if dates is None:
+        dates = _empty_dates()
+    for key in ("plan_start", "plan_end", "real_start", "real_end"):
+        if key in explicit_empty:
+            dates[key] = None
+        elif tempo_dates.get(key):
+            dates[key] = tempo_dates[key]
+    if tempo_dates.get("temporal_source"):
+        dates["temporal_source"] = tempo_dates["temporal_source"]
+    if not any(dates.get(k) for k in ("plan_start", "plan_end", "real_start", "real_end")):
+        return None
+    return dates
 
 
 def _parse_percent(v: str) -> int | None:
@@ -528,11 +584,52 @@ def _item_from_enriched_row(cols: list[str], headers: list[str], current_phase: 
     }
 
 
+_SKIP_WALK = {
+    "node_modules",
+    ".git",
+    ".glpi",
+    "dist",
+    "build",
+    ".next",
+    "coverage",
+    "android",
+    "ios",
+    ".gradle",
+    "Pods",
+    "vendor",
+}
+
+
+def iter_markdown(repo_path: Path):
+    """Markdown do repositório, sem descer em dependências nem artefatos de build.
+
+    Clone em /mnt (drvfs/9p) só entra por docs/: varrer a árvore inteira trava.
+    """
+    if not repo_path.is_dir():
+        return
+    if str(repo_path).startswith("/mnt/"):
+        repo_path = repo_path / "docs"
+        if not repo_path.is_dir():
+            return
+    for dirpath, dirnames, filenames in os.walk(repo_path, followlinks=False):
+        dirnames[:] = [d for d in dirnames if d not in _SKIP_WALK]
+        for name in filenames:
+            if name.lower().endswith(".md"):
+                yield Path(dirpath) / name
+
+
 def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
     """Extrai fases (S/pai) e itens (P/filho) de PLANO_*.md — SAMU enriquecido + Bot_Pan."""
     out: list[dict] = []
-    files = sorted(repo_path.glob("**/PLANO*.md"))
-    files = [f for f in files if "node_modules" not in f.parts and ".git" not in f.parts]
+    files: list[Path] = []
+    for f in iter_markdown(repo_path):
+        if any(part in f.parts for part in ("node_modules", ".git", "legados", "anexos")):
+            continue
+        if f.name.lower().startswith("plano") or (
+            f.parent.name == "planos_ativos" and f.name != "README.md"
+        ):
+            files.append(f)
+    files = sorted(set(files))
 
     for f in files:
         try:
@@ -657,6 +754,27 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                 continue
 
             if not current_phase:
+                mcode = CHECKBOX_WITH_CODE_RE.match(line)
+                if mcode and re.match(r"^F\d+\.", mcode.group(2), re.I):
+                    st = status_from_mark(mcode.group(1))
+                    code = mcode.group(2).upper()
+                    title = _strip_glpi_html_comment(mcode.group(3))
+                    dates = _dates_from_checkbox_context(lines, i - 1)
+                    out.append(
+                        _make_plan_item(
+                            code=code,
+                            parent_code=_parent_code_from_item(code, None),
+                            title=title,
+                            status_local=st,
+                            f=f,
+                            repo_path=repo_path,
+                            repo_id=repo_id,
+                            line_no=i,
+                            confidence=0.92 if dates else 0.88,
+                            dates=dates,
+                        )
+                    )
+                    continue
                 # Seções com checklist sem heading de fase explícito
                 if line.startswith("## ") and PLAN_ACTION_SECTION_RE.search(line):
                     flush_phase()
@@ -665,6 +783,16 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                     current_phase_line = i
                     item_idx = 0
                     continue
+                # ### F1 / ### F2.S11 — sessão ou fase do modelo novo
+                if line.startswith("### "):
+                    fm = re.match(r"^###\s+(F\d+(?:\.S\d+)?)\b", line, re.I)
+                    if fm:
+                        flush_phase()
+                        current_phase = fm.group(1).upper()
+                        current_phase_title = line.lstrip("#").strip()
+                        current_phase_line = i
+                        item_idx = 0
+                        continue
                 # ### com código R/P no título (critérios de aceite)
                 if line.startswith("### "):
                     m = re.search(r"\b(R\d+|P\d+(?:\.\d+)?)\b", line, re.I)
@@ -855,16 +983,7 @@ def scan_other_markdown(repo_path: Path, repo_id: str) -> list[dict]:
     for pat in patterns:
         files_raw.update(repo_path.glob(pat))
     # Também varre markdown com comentário glpi embutido (SESSAO, ROADMAP, etc.)
-    for f in repo_path.rglob("*.md"):
-        if "node_modules" in f.parts or ".git" in f.parts:
-            continue
-        try:
-            sample = f.read_text(encoding="utf-8", errors="replace")
-        except OSError:
-            continue
-        if "<!-- glpi:" in sample.lower() and re.search(r"^\s*[-*]\s*\[[ xX~]\]\s+", sample, re.M):
-            files_raw.add(f)
-    for f in repo_path.rglob("*.MD"):
+    for f in iter_markdown(repo_path):
         if "node_modules" in f.parts or ".git" in f.parts:
             continue
         try:
@@ -1320,14 +1439,37 @@ def _format_source_line(s: dict) -> str:
     return " ".join(parts)
 
 
+def draft_purpose(c: dict) -> str:
+    """Rascunho de natureza e finalidade. O agente reescreve; não é o título cru."""
+    code = str(c.get("code") or "—")
+    title = str(c.get("title") or c.get("name") or "tarefa sem titulo").strip()
+    title = re.sub(r"^\[[^\]]+\]\s*", "", title)
+    parts = [
+        f"Natureza: atividade {code} na evolucao do projeto.",
+        f"Finalidade: {title}.",
+    ]
+    for source in c.get("sources") or []:
+        kind = str(source.get("kind") or "")
+        if kind in ("commit", "git-blame", "commit-inferred"):
+            subject = str(source.get("subject") or source.get("name") or "").strip()
+            if subject:
+                parts.append(f"Commit: {subject}.")
+            break
+    if c.get("temporal_source"):
+        parts.append(f"Evidencia: {c['temporal_source']}.")
+    return " ".join(parts)
+
+
 def build_suggested_content(
     c: dict,
     *,
     max_len: int = DEFAULT_CONTENT_MAX,
     max_sources: int = DEFAULT_CONTENT_MAX_SOURCES,
 ) -> str:
-    """Monta content da ProjectTask com hierarquia + source_repos + sources (polyrepo)."""
+    """Monta content da ProjectTask com finalidade, hierarquia e fontes."""
     lines: list[str] = [
+        draft_purpose(c),
+        "",
         f"Hierarquia: kind={c.get('kind')} code={c.get('code') or '—'} "
         f"parent={c.get('parent_code') or '—'}",
     ]
@@ -2269,13 +2411,14 @@ def main() -> int:
             gap_min=pack_gap,
         )
 
+    cands, legacy_r = ensure_fsp(cands, repo_root)
+    cands = dedupe(cands)
     _finalize_candidate_actions(
         cands,
         project_id=project_id,
         existing_names=existing_names,
         existing_codes=existing_codes,
     )
-    cands, legacy_r = ensure_fsp(cands, repo_root)
 
     stamp = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d_%H%M")
     bundle = ws.get("bundle", "workspace")

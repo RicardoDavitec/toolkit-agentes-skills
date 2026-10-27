@@ -28,6 +28,8 @@ Comandos:
   project create [opcoes] [--apply]
                            Cria Project GLPI (dry-run por padrao).
                            Sem pai, o nome segue GEP - {produto} - 0. [PAI]
+  project update --id=N [--name=...] [--code=...] [--parent-project=ID] [--apply]
+                           Renomeia Project. Sem pai, ou pai 0, aplica o molde GEP.
   ticket-mirror [--apply] [--env=homolog] [--from=JSON]
                            Espelha P em andamento e futuros no chamado pai
   task get <id>            Obtem ProjectTask
@@ -824,6 +826,55 @@ cmd_project_create() {
   fi
 }
 
+cmd_project_update() {
+  local apply=0 id="" name="" code="" parent=""
+  local arg
+  for arg in "$@"; do
+    case "$arg" in
+      --apply) apply=1 ;;
+      --id=*) id="${arg#--id=}" ;;
+      --name=*) name="${arg#--name=}" ;;
+      --code=*) code="${arg#--code=}" ;;
+      --parent-project=*) parent="${arg#--parent-project=}" ;;
+      -h|--help)
+        echo "Uso: glpi project update --id=N [--name=...] [--code=...] [--parent-project=ID] [--apply]"
+        echo "  Pai ausente ou 0: o nome da raiz recebe GEP - {produto} - 0. [PAI]."
+        echo "  Pai diferente de 0: fase e subprojeto nao recebem esse prefixo."
+        return 0
+        ;;
+      *) die "flag desconhecida: $arg" ;;
+    esac
+  done
+  [[ "${GLPI_DRY_RUN:-0}" == "1" ]] && apply=0
+  [[ -n "$id" ]] || die "project update exige --id="
+  [[ -n "$name" || -n "$code" ]] || die "project update exige --name= ou --code="
+  if [[ -z "$parent" || "$parent" == "0" ]]; then
+    if [[ -n "$name" ]]; then
+      name="$(python3 "${SCRIPT_DIR}/lib/crfsp.py" --format-root-name "$name")"
+    fi
+  fi
+  local input payload
+  input="$(jq -n \
+    --arg name "$name" \
+    --arg code "$code" \
+    '
+    def put($k;$v): if ($v|tostring|length)>0 then . + {($k):$v} else . end;
+    {}
+    | put("name"; $name)
+    | put("code"; $code)
+    ')"
+  payload="$(jq -n --argjson input "$input" '{input:$input}')"
+  echo "Modo: $([[ "$apply" -eq 1 ]] && echo APPLY || echo DRY-RUN)"
+  echo "$payload" | jq .
+  if [[ "$apply" -eq 0 ]]; then
+    echo "Dry-run. Reexecute com --apply para renomear o Project."
+    return 0
+  fi
+  glpi_init_session
+  trap 'glpi_kill_session' EXIT
+  echo "$payload" | glpi_curl PUT "/Project/${id}" | jq .
+}
+
 cmd_states_discover() {
   local apply=0 preset="" out="" extra=() arg
   load_project_config
@@ -970,7 +1021,8 @@ main() {
         get) cmd_project_get "$@" ;;
         tasks) cmd_project_tasks "$@" ;;
         create) cmd_project_create "$@" ;;
-        *) die "subcomando project invalido. Use: get | tasks | create" ;;
+        update) cmd_project_update "$@" ;;
+        *) die "subcomando project invalido. Use: get | tasks | create | update" ;;
       esac
       ;;
     task)

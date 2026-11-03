@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Wrapper — migra codes v1 (S/P) para v2 (F/S/P). Dry-run por padrao.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+exec python3 "$ROOT/tools/glpi/lib/migrate_codes.py" "$@"

@@ -34,6 +34,12 @@ PHASE_HEADING_ALT_RE = re.compile(
     re.IGNORECASE,
 )
 S_CODE_RE = re.compile(r"\b(S[0-9]+(?:\.[Pp][0-9]+)?)\b")
+# Preferir v2; nao deixar S_CODE_RE casar o miolo de F2.S1.P1
+FSP_CODE_RE = re.compile(r"\b(F\d+(?:\.S\d+(?:\.P\d+)?)?)\b", re.I)
+FSP_HEADING_RE = re.compile(
+    r"^#{2,3}\s+(F\d+(?:\.S\d+)?)\s*[—\-–:]?\s*(.*)$",
+    re.I,
+)
 STATUS_CELL_RE = re.compile(r"^\[([ xX~])\]$")
 DATE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}(?::\d{2})?)?)$")
 META_ROW_RE = re.compile(
@@ -49,21 +55,6 @@ GLPI_ATTR_RE = re.compile(
     r"""(plan_start|plan_end|real_start|real_end|temporal_source)\s*=\s*["']([^"']+)["']""",
     re.IGNORECASE,
 )
-# Campos visíveis, logo abaixo do checkbox. Vazio permanece vazio.
-#   - inicio: 2026-10-27 07:14
-#   - fim: 2026-10-27 11:00
-#   - inicio_real:
-#   - fim_real:
-TEMPO_FIELD_RE = re.compile(
-    r"^\s*-\s*(inicio_real|fim_real|inicio|fim)\s*:\s*(.*?)\s*$",
-    re.IGNORECASE,
-)
-TEMPO_FIELD_KEY = {
-    "inicio": "plan_start",
-    "fim": "plan_end",
-    "inicio_real": "real_start",
-    "fim_real": "real_end",
-}
 # Bot_Pan / planos genéricos (sem heading SAMU "Fase N (S4)")
 CHECKBOX_WITH_CODE_RE = re.compile(
     r"^\s*[-*]\s*\[([ xX~tT])\]\s+(?:\*\*)?"
@@ -187,37 +178,6 @@ def _fmt_dt(dt: datetime) -> str:
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _md_plan_day(value) -> str:
-    """Plan ini / Plan fim: só a data."""
-    return str(value or "").strip()[:10]
-
-
-def _md_real_hm(value) -> str:
-    """Real ini / Real fim: data e hora:minuto."""
-    raw = str(value or "").strip()
-    if len(raw) >= 16 and raw[10:11] == " ":
-        return raw[:16]
-    return raw[:10]
-
-
-def _md_candidate_table(cands: list[dict]) -> list[str]:
-    lines = [
-        "| Acao | Kind | Level | Code | Parent | Modulo | Atomos | Min | Titulo | Status | % | Plan ini | Plan fim | Real ini | Real fim |",
-        "|------|------|-------|------|--------|--------|--------|-----|--------|--------|---|----------|----------|----------|----------|",
-    ]
-    for c in cands[:300]:
-        level = c.get("level") or ("phase" if c.get("kind") == "phase" else "item")
-        lines.append(
-            f"| {c['action']} | {c.get('kind')} | {level} | "
-            f"{c.get('code') or ''} | {c.get('parent_code') or ''} | {c.get('module') or ''} | "
-            f"{c.get('atom_count') or ''} | {c.get('effort_minutes') or ''} | "
-            f"{c['title'][:36].replace('|', '/')} | {c['status_local']} | {c['percent_done']} | "
-            f"{_md_plan_day(c.get('plan_start'))} | {_md_plan_day(c.get('plan_end'))} | "
-            f"{_md_real_hm(c.get('real_start'))} | {_md_real_hm(c.get('real_end'))} |"
-        )
-    return lines
-
-
 def _empty_dates() -> dict:
     return {
         "plan_start": None,
@@ -254,6 +214,10 @@ def _parse_glpi_html_comment(text: str) -> dict | None:
         dates["plan_start"] = dates["real_start"]
     if dates.get("real_end") and not dates.get("plan_end"):
         dates["plan_end"] = dates["real_end"]
+    if dates.get("plan_start") and not dates.get("real_start"):
+        dates["real_start"] = dates["plan_start"]
+    if dates.get("plan_end") and not dates.get("real_end"):
+        dates["real_end"] = dates["plan_end"]
     return dates
 
 
@@ -261,64 +225,19 @@ def _strip_glpi_html_comment(text: str) -> str:
     return GLPI_HTML_COMMENT_RE.sub("", text or "").strip()
 
 
-def _tempo_fields_after(lines: list[str], idx: int) -> tuple[dict, set[str]] | None:
-    """Lê inicio/fim/inicio_real/fim_real nas linhas seguintes ao checkbox."""
-    found = False
-    dates = _empty_dates()
-    explicit_empty: set[str] = set()
-    for j in range(idx + 1, min(idx + 8, len(lines))):
-        line = lines[j]
-        if not line.strip():
-            continue
-        if GLPI_HTML_COMMENT_RE.search(line) and not CHECK_RE.match(line):
-            continue
-        m = TEMPO_FIELD_RE.match(line)
-        if not m:
-            break
-        found = True
-        key = TEMPO_FIELD_KEY[m.group(1).lower()]
-        raw = m.group(2).strip()
-        if raw in {"", "—", "-", "–"}:
-            explicit_empty.add(key)
-            dates[key] = None
-        else:
-            dates[key] = _normalize_ts(raw)
-    if not found:
-        return None
-    if any(dates.get(k) for k in ("plan_start", "plan_end", "real_start", "real_end")):
-        dates["temporal_source"] = "checklist-tempo"
-    return dates, explicit_empty
-
-
 def _dates_from_checkbox_context(lines: list[str], idx: int) -> dict | None:
-    """Lê os quatro campos visíveis e, na falta deles, o comentário glpi."""
+    """Lê meta GLPI na mesma linha do checkbox ou na linha imediatamente seguinte."""
     if idx < 0 or idx >= len(lines):
         return None
-    dates = _parse_glpi_html_comment(lines[idx])
-    if dates is None:
-        for j in range(idx + 1, min(idx + 6, len(lines))):
-            nxt = lines[j]
-            if not nxt.strip():
-                continue
-            if GLPI_HTML_COMMENT_RE.search(nxt) and not CHECK_RE.match(nxt):
-                dates = _parse_glpi_html_comment(nxt)
-            break
-    tempo = _tempo_fields_after(lines, idx)
-    if tempo is None:
-        return dates
-    tempo_dates, explicit_empty = tempo
-    if dates is None:
-        dates = _empty_dates()
-    for key in ("plan_start", "plan_end", "real_start", "real_end"):
-        if key in explicit_empty:
-            dates[key] = None
-        elif tempo_dates.get(key):
-            dates[key] = tempo_dates[key]
-    if tempo_dates.get("temporal_source"):
-        dates["temporal_source"] = tempo_dates["temporal_source"]
-    if not any(dates.get(k) for k in ("plan_start", "plan_end", "real_start", "real_end")):
-        return None
-    return dates
+    same = _parse_glpi_html_comment(lines[idx])
+    if same:
+        return same
+    if idx + 1 < len(lines):
+        nxt = lines[idx + 1]
+        # só aceita linha seguinte se for o comentário (ou só whitespace + comentário)
+        if GLPI_HTML_COMMENT_RE.search(nxt) and not CHECK_RE.match(nxt):
+            return _parse_glpi_html_comment(nxt)
+    return None
 
 
 def _parse_percent(v: str) -> int | None:
@@ -615,52 +534,22 @@ def _item_from_enriched_row(cols: list[str], headers: list[str], current_phase: 
     }
 
 
-_SKIP_WALK = {
-    "node_modules",
-    ".git",
-    ".glpi",
-    "dist",
-    "build",
-    ".next",
-    "coverage",
-    "android",
-    "ios",
-    ".gradle",
-    "Pods",
-    "vendor",
-}
-
-
-def iter_markdown(repo_path: Path):
-    """Markdown do repositório, sem descer em dependências nem artefatos de build.
-
-    Clone em /mnt (drvfs/9p) só entra por docs/: varrer a árvore inteira trava.
-    """
-    if not repo_path.is_dir():
-        return
-    if str(repo_path).startswith("/mnt/"):
-        repo_path = repo_path / "docs"
-        if not repo_path.is_dir():
-            return
-    for dirpath, dirnames, filenames in os.walk(repo_path, followlinks=False):
-        dirnames[:] = [d for d in dirnames if d not in _SKIP_WALK]
-        for name in filenames:
-            if name.lower().endswith(".md"):
-                yield Path(dirpath) / name
-
-
 def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
-    """Extrai fases (S/pai) e itens (P/filho) de PLANO_*.md — SAMU enriquecido + Bot_Pan."""
+    """Extrai F/S/P de PLANO_*.md e de docs/05_progresso/planos_ativos/."""
     out: list[dict] = []
-    files: list[Path] = []
-    for f in iter_markdown(repo_path):
-        if any(part in f.parts for part in ("node_modules", ".git", "legados", "anexos")):
-            continue
-        if f.name.lower().startswith("plano") or (
-            f.parent.name == "planos_ativos" and f.name != "README.md"
-        ):
-            files.append(f)
-    files = sorted(set(files))
+    files_set: set[Path] = set(repo_path.glob("**/PLANO*.md"))
+    ativos = repo_path / "docs" / "05_progresso" / "planos_ativos"
+    if ativos.is_dir():
+        # so planos raiz (nao anexos/: evita duplicar F/S/P do mesmo code)
+        files_set.update(p for p in ativos.glob("*.md"))
+    files = sorted(
+        f
+        for f in files_set
+        if "node_modules" not in f.parts
+        and ".git" not in f.parts
+        and ".backups" not in f.parts
+        and f.name.upper() != "README.MD"
+    )
 
     for f in files:
         try:
@@ -753,6 +642,19 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                 item_idx = 0
                 continue
 
+            # Convenção v2: ### F2.S1 — Titulo / ## F2 — ...
+            fsp_h = FSP_HEADING_RE.match(line)
+            if fsp_h:
+                flush_phase()
+                current_phase = fsp_h.group(1).upper()
+                rest = (fsp_h.group(2) or "").strip()
+                current_phase_title = (
+                    f"{current_phase} {rest}".strip() if rest else current_phase
+                )
+                current_phase_line = i
+                item_idx = 0
+                continue
+
             # Bot_Pan: ## R1, ## P7.1, ## Prioridade N, ## Checklist …
             bp = _parse_botpan_phase_heading(line, file_prefix)
             if bp:
@@ -785,27 +687,6 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                 continue
 
             if not current_phase:
-                mcode = CHECKBOX_WITH_CODE_RE.match(line)
-                if mcode and re.match(r"^F\d+\.", mcode.group(2), re.I):
-                    st = status_from_mark(mcode.group(1))
-                    code = mcode.group(2).upper()
-                    title = _strip_glpi_html_comment(mcode.group(3))
-                    dates = _dates_from_checkbox_context(lines, i - 1)
-                    out.append(
-                        _make_plan_item(
-                            code=code,
-                            parent_code=_parent_code_from_item(code, None),
-                            title=title,
-                            status_local=st,
-                            f=f,
-                            repo_path=repo_path,
-                            repo_id=repo_id,
-                            line_no=i,
-                            confidence=0.92 if dates else 0.88,
-                            dates=dates,
-                        )
-                    )
-                    continue
                 # Seções com checklist sem heading de fase explícito
                 if line.startswith("## ") and PLAN_ACTION_SECTION_RE.search(line):
                     flush_phase()
@@ -814,16 +695,6 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                     current_phase_line = i
                     item_idx = 0
                     continue
-                # ### F1 / ### F2.S11 — sessão ou fase do modelo novo
-                if line.startswith("### "):
-                    fm = re.match(r"^###\s+(F\d+(?:\.S\d+)?)\b", line, re.I)
-                    if fm:
-                        flush_phase()
-                        current_phase = fm.group(1).upper()
-                        current_phase_title = line.lstrip("#").strip()
-                        current_phase_line = i
-                        item_idx = 0
-                        continue
                 # ### com código R/P no título (critérios de aceite)
                 if line.startswith("### "):
                     m = re.search(r"\b(R\d+|P\d+(?:\.\d+)?)\b", line, re.I)
@@ -834,6 +705,19 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                         current_phase_line = i
                         item_idx = 0
                         continue
+
+            # Checkbox F/S/P v2 pode aparecer antes de heading de fase (code traz a fase)
+            mcode_early = CHECKBOX_WITH_CODE_RE.match(line) if not current_phase else None
+            if mcode_early:
+                code_early = mcode_early.group(2).upper()
+                if FSP_CODE_RE.fullmatch(code_early) or re.match(
+                    r"^F\d+\.S\d+(?:\.P\d+)?$", code_early, re.I
+                ):
+                    parent_early = _parent_code_from_item(code_early, None)
+                    # abre contexto na fase (F#) ou sessao (F#.S#)
+                    current_phase = parent_early or code_early.split(".")[0]
+                    current_phase_title = current_phase
+                    current_phase_line = i
 
             if not current_phase:
                 continue
@@ -882,14 +766,18 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                         phase_items.append(botpan_row)
                         continue
 
-            # Checkbox com código inline: - [ ] **8.3.a** Título
+            # Checkbox com código inline: - [ ] **F2.S1.P1** Título / legado 8.3.a
             mcode = CHECKBOX_WITH_CODE_RE.match(line)
             if mcode:
                 st = status_from_mark(mcode.group(1))
                 code = mcode.group(2).upper()
                 title = _strip_glpi_html_comment(mcode.group(3))
+                # Titulo humanizado: prefixa o code quando ainda nao esta no texto
+                if code and code not in title:
+                    title = f"{code} {title}".strip()
                 parent = _parent_code_from_item(code, current_phase)
                 dates = _dates_from_checkbox_context(lines, i - 1)
+                # Sessao/tarefa FSP: kind inferido depois por ensure_fsp
                 phase_items.append(
                     _make_plan_item(
                         code=code,
@@ -900,7 +788,7 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
                         repo_path=repo_path,
                         repo_id=repo_id,
                         line_no=i,
-                        confidence=0.92 if dates else 0.88,
+                        confidence=1.0 if re.match(r"^F\d+\.S\d+", code) else (0.92 if dates else 0.88),
                         dates=dates,
                     )
                 )
@@ -977,8 +865,6 @@ def scan_plano_hierarchy(repo_path: Path, repo_id: str) -> list[dict]:
             # Bullets simples (Prioridade N — PLANO_PARALELO)
             mb = PLAIN_BULLET_RE.match(line)
             if mb and current_phase and not line.strip().startswith("|"):
-                if TEMPO_FIELD_RE.match(line):
-                    continue
                 bullet_title = mb.group(1).strip()
                 if len(bullet_title) < 8:
                     continue
@@ -1016,7 +902,16 @@ def scan_other_markdown(repo_path: Path, repo_id: str) -> list[dict]:
     for pat in patterns:
         files_raw.update(repo_path.glob(pat))
     # Também varre markdown com comentário glpi embutido (SESSAO, ROADMAP, etc.)
-    for f in iter_markdown(repo_path):
+    for f in repo_path.rglob("*.md"):
+        if "node_modules" in f.parts or ".git" in f.parts:
+            continue
+        try:
+            sample = f.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if "<!-- glpi:" in sample.lower() and re.search(r"^\s*[-*]\s*\[[ xX~]\]\s+", sample, re.M):
+            files_raw.add(f)
+    for f in repo_path.rglob("*.MD"):
         if "node_modules" in f.parts or ".git" in f.parts:
             continue
         try:
@@ -1041,7 +936,7 @@ def scan_other_markdown(repo_path: Path, repo_id: str) -> list[dict]:
         files.add(f)
 
     for f in sorted(files):
-        if "node_modules" in f.parts:
+        if "node_modules" in f.parts or ".backups" in f.parts:
             continue
         try:
             lines = f.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -1054,21 +949,32 @@ def scan_other_markdown(repo_path: Path, repo_id: str) -> list[dict]:
             title = _strip_glpi_html_comment(m.group(2))
             st = status_from_mark(m.group(1))
             dates = _dates_from_checkbox_context(lines, i - 1) or _empty_dates()
-            sm = S_CODE_RE.search(title)
             parent = None
             code = None
             kind = "item"
-            if sm:
-                raw = sm.group(1).upper()
-                if re.match(r"^S\d+$", raw):
-                    parent = raw
-                    code = f"{raw}.P?"
-                else:
-                    # S1.5 → tratar como item sob S1
-                    parent = re.match(r"^(S\d+)", raw)
-                    parent = parent.group(1) if parent else None
-                    code = raw.replace(".", ".P") if parent else raw
-            conf = 0.9 if any(dates.get(k) for k in DATE_FIELDS) else 0.55
+            fm = FSP_CODE_RE.search(title)
+            if fm:
+                raw = fm.group(1).upper()
+                code = raw
+                parent = _parent_code_from_item(raw, None)
+                if code and code not in title:
+                    title = f"{code} {title}".strip()
+            else:
+                sm = S_CODE_RE.search(title)
+                if sm:
+                    raw = sm.group(1).upper()
+                    if re.match(r"^S\d+$", raw):
+                        parent = raw
+                        code = f"{raw}.P?"
+                    else:
+                        parent_m = re.match(r"^(S\d+)", raw)
+                        parent = parent_m.group(1) if parent_m else None
+                        code = raw.replace(".", ".P") if parent else raw
+            conf = (
+                1.0
+                if code and re.match(r"^F\d+\.S\d+", code or "")
+                else (0.9 if any(dates.get(k) for k in DATE_FIELDS) else 0.55)
+            )
             out.append(
                 {
                     "kind": kind,
@@ -1472,37 +1378,14 @@ def _format_source_line(s: dict) -> str:
     return " ".join(parts)
 
 
-def draft_purpose(c: dict) -> str:
-    """Rascunho de natureza e finalidade. O agente reescreve; não é o título cru."""
-    code = str(c.get("code") or "—")
-    title = str(c.get("title") or c.get("name") or "tarefa sem titulo").strip()
-    title = re.sub(r"^\[[^\]]+\]\s*", "", title)
-    parts = [
-        f"Natureza: atividade {code} na evolucao do projeto.",
-        f"Finalidade: {title}.",
-    ]
-    for source in c.get("sources") or []:
-        kind = str(source.get("kind") or "")
-        if kind in ("commit", "git-blame", "commit-inferred"):
-            subject = str(source.get("subject") or source.get("name") or "").strip()
-            if subject:
-                parts.append(f"Commit: {subject}.")
-            break
-    if c.get("temporal_source"):
-        parts.append(f"Evidencia: {c['temporal_source']}.")
-    return " ".join(parts)
-
-
 def build_suggested_content(
     c: dict,
     *,
     max_len: int = DEFAULT_CONTENT_MAX,
     max_sources: int = DEFAULT_CONTENT_MAX_SOURCES,
 ) -> str:
-    """Monta content da ProjectTask com finalidade, hierarquia e fontes."""
+    """Monta content da ProjectTask com hierarquia + source_repos + sources (polyrepo)."""
     lines: list[str] = [
-        draft_purpose(c),
-        "",
         f"Hierarquia: kind={c.get('kind')} code={c.get('code') or '—'} "
         f"parent={c.get('parent_code') or '—'}",
     ]
@@ -1714,8 +1597,6 @@ def chain_temporal_windows_same_day(cands: list[dict]) -> None:
         if len(items) < 2:
             # único item do dia: estimar início se ainda colapsado
             c = items[0]
-            if (c.get("temporal_source") or "") in ("checklist-tempo", "checklist-comment"):
-                continue
             rs, re = _parse_dt(c.get("real_start")), _parse_dt(c.get("real_end"))
             if rs and re and rs >= re:
                 est = c.get("estimated_minutes") or DEFAULT_ESTIMATE_MINUTES
@@ -1731,9 +1612,6 @@ def chain_temporal_windows_same_day(cands: list[dict]) -> None:
         for idx, c in enumerate(items):
             end = _parse_dt(c.get("real_end"))
             if not end:
-                continue
-            if (c.get("temporal_source") or "") in ("checklist-tempo", "checklist-comment"):
-                prev_end = end
                 continue
             if idx == 0 or prev_end is None:
                 est = c.get("estimated_minutes") or DEFAULT_ESTIMATE_MINUTES
@@ -1855,8 +1733,7 @@ def load_existing_state(repo_root: Path, project_id: str) -> tuple[set[str], set
 
 
 # ---------------------------------------------------------------------------
-# Empacotamento 3 níveis: Fase F → Sessão S → Pacote P (~2h) → átomos (content)
-# Códigos canônicos: F#, F#.S#, F#.S#.P# (sem M.* / ….PKG#)
+# Empacotamento 3 níveis: Fase (S) → Pacote (P ~2h) → átomos (só content)
 # ---------------------------------------------------------------------------
 
 _MODULE_PATH_MAP = {
@@ -1872,28 +1749,16 @@ _MODULE_PATH_MAP = {
     "docs": "docs",
 }
 
-# Módulo (path/título) → fase GEP quando o átomo não traz F# explícito.
-_MODULE_TO_LIFECYCLE = {
-    "docs": "F1",
-    "backend": "F2",
-    "web": "F2",
-    "mobile": "F2",
-    "postgresql": "F2",
-    "geral": "F2",
-    "infra": "F4",
-    "ops": "F2",
+_MODULE_PHASE_TITLES = {
+    "backend": "Modulo backend",
+    "web": "Modulo web / frontend",
+    "mobile": "Modulo mobile",
+    "infra": "Modulo infra / deploy",
+    "postgresql": "Modulo postgresql / banco",
+    "docs": "Modulo documentacao",
+    "geral": "Modulo geral / transversal",
+    "ops": "Checklist operacional (processo)",
 }
-
-_LIFECYCLE_PHASE_TITLES = {
-    "F1": "F1. Planejamento",
-    "F2": "F2. Implementação",
-    "F3": "F3. Testes Internos",
-    "F4": "F4. Homologação",
-    "F5": "F5. Aprovação",
-}
-
-_FSP_CODE_RE = re.compile(r"^(F[1-5])(?:\.S(\d+)(?:\.P(\d+))?)?$", re.I)
-_LEGACY_SP_RE = re.compile(r"^S(\d+)(?:\.P(\d+))?$", re.I)
 
 _NOISE_TITLE_RE = re.compile(
     r"(?i)^(mudança tem objetivo|mudanca tem objetivo|build ou valida|"
@@ -1996,42 +1861,20 @@ def _status_from_atoms(atoms: list[dict]) -> tuple[str, int, str]:
     return "partial", avg, "gep3"
 
 
-def _lifecycle_phase_for_atom(it: dict) -> str:
-    """Resolve F1–F5: phase/code/parent explícitos, senão mapa de módulo."""
-    for key in ("phase", "code", "parent_code"):
-        raw = str(it.get(key) or "").strip().upper()
-        match = _FSP_CODE_RE.fullmatch(raw)
-        if match:
-            return match.group(1).upper()
-        match = re.match(r"^(F[1-5])\b", raw)
-        if match:
-            return match.group(1).upper()
-    return _MODULE_TO_LIFECYCLE.get(str(it.get("module") or "geral").lower(), "F2")
+def _module_phase_code(module: str) -> str:
+    slug = re.sub(r"[^A-Z0-9]", "", (module or "GERAL").upper())[:12] or "GERAL"
+    return f"M.{slug}"
 
 
-def _iso_week_key(day: str) -> str:
-    if not day or day == "nodate":
-        return "nodate"
-    try:
-        stamp = datetime.strptime(day[:10], "%Y-%m-%d").date()
-    except ValueError:
-        return "nodate"
-    iso = stamp.isocalendar()
-    return f"{iso[0]}W{iso[1]:02d}"
-
-
-def _ensure_lifecycle_phase(phases_by_code: dict[str, dict], phase_code: str) -> dict:
-    code = (phase_code or "F2").upper()
-    if code not in _LIFECYCLE_PHASE_TITLES:
-        code = "F2"
-    if code in phases_by_code and phases_by_code[code].get("kind") == "phase":
+def _ensure_module_phase(phases_by_code: dict[str, dict], module: str) -> dict:
+    code = _module_phase_code(module)
+    if code in phases_by_code:
         return phases_by_code[code]
     phase = {
         "kind": "phase",
-        "level": "F",
         "code": code,
         "parent_code": None,
-        "title": _LIFECYCLE_PHASE_TITLES[code],
+        "title": _MODULE_PHASE_TITLES.get(module, f"Modulo {module}"),
         "status_local": "pending",
         "percent_done": 0,
         "state": "gep1",
@@ -2039,29 +1882,15 @@ def _ensure_lifecycle_phase(phases_by_code: dict[str, dict], phase_code: str) ->
         "plan_end": None,
         "real_start": None,
         "real_end": None,
-        "temporal_source": "pack-lifecycle",
-        "confidence": 1.0,
+        "temporal_source": "pack-module",
+        "confidence": 0.85,
         "source_repos": [],
-        "sources": [{"kind": "pack", "path": f"lifecycle:{code}"}],
-        "phase": code,
-        "phase_source": "pack",
-        "pack_generated": code not in phases_by_code,
+        "sources": [{"kind": "pack", "path": f"module:{module}"}],
+        "module": module,
+        "pack_generated": True,
     }
     phases_by_code[code] = phase
     return phase
-
-
-def _canonical_task_code(raw: str | None, phase: str) -> str | None:
-    """Aceita só F#.S#.P#; promove legado S#.P# para F#.S#.P#."""
-    if not raw:
-        return None
-    text = str(raw).strip().upper()
-    if _FSP_CODE_RE.fullmatch(text) and text.count(".") == 2:
-        return text
-    match = _LEGACY_SP_RE.fullmatch(text)
-    if match and match.group(2):
-        return f"{phase}.S{match.group(1)}.P{match.group(2)}"
-    return None
 
 
 def build_package_content(
@@ -2076,7 +1905,7 @@ def build_package_content(
     lines = [
         f"Nivel: pacote (P) | Modulo: {module} | Atomos: {len(atoms)} | "
         f"Esforco: {int(round(effort_min))} min",
-        "Hierarquia: F (fase) → S (sessao) → P (pacote) → atomos (somente neste content)",
+        "Hierarquia: Fase(S) → Pacote(P) → atomos (somente neste content)",
         "Atomos:",
     ]
     shown = atoms[: max(0, max_atoms)]
@@ -2127,25 +1956,6 @@ def _synthesize_package_title(atoms: list[dict], module: str, day: str) -> str:
     return f"[{module}] {first} (+{n - 1} atomos, {day})"[:255]
 
 
-def enrich_atom_audit_durations(atoms: list[dict]) -> None:
-    """Duracoes no atoms_detail (audit). Nao sao nivel GLPI; so transparencia."""
-    for atom in atoms:
-        plan_start = _parse_dt(atom.get("plan_start"))
-        plan_end = _parse_dt(atom.get("plan_end"))
-        real_start = _parse_dt(atom.get("real_start"))
-        real_end = _parse_dt(atom.get("real_end"))
-        if plan_start and plan_end and plan_end >= plan_start:
-            atom["planned_duration"] = int((plan_end - plan_start).total_seconds())
-        elif atom.get("duration_minutes") is not None:
-            atom["planned_duration"] = int(round(float(atom["duration_minutes"]) * 60))
-        else:
-            atom["planned_duration"] = None
-        if real_start and real_end and real_end >= real_start:
-            atom["effective_duration"] = int((real_end - real_start).total_seconds())
-        else:
-            atom["effective_duration"] = 0
-
-
 def pack_candidates(
     cands: list[dict],
     *,
@@ -2153,27 +1963,19 @@ def pack_candidates(
     gap_min: int = DEFAULT_PACK_GAP_MIN,
     atom_clamp_min: int = DEFAULT_PACK_ATOM_CLAMP_MIN,
 ) -> tuple[list[dict], list[dict], dict]:
-    """Consolida itens em pacotes ~target_min com códigos F#.S#.P#.
+    """Consolida itens em pacotes ~target_min.
 
     Retorna (candidatos_apply, atoms_audit, pack_meta).
-    Candidatos apply = fases F1–F5 + pacotes (kind=item, level=package→P).
-    Sessões F#.S# são criadas depois por ensure_fsp a partir do parent_code.
-    Átomos ficam só no content dos pacotes e em atoms_detail.
+    Candidatos apply = fases (originais + M.*) + pacotes (kind=item).
+    Átomos ficam só no content dos pacotes e no array atoms do relatório.
     """
-    phases = [
-        json.loads(json.dumps(c))
-        for c in cands
-        if c.get("kind") == "phase"
-        and _FSP_CODE_RE.fullmatch(str(c.get("code") or "").upper())
-        and str(c.get("code") or "").upper().count(".") == 0
-    ]
+    phases = [json.loads(json.dumps(c)) for c in cands if c.get("kind") == "phase"]
     items = [json.loads(json.dumps(c)) for c in cands if c.get("kind") != "phase"]
 
     phases_by_code: dict[str, dict] = {
         (p.get("code") or "").upper(): p for p in phases if p.get("code")
     }
-    for code in _LIFECYCLE_PHASE_TITLES:
-        _ensure_lifecycle_phase(phases_by_code, code)
+    module_phases_added: list[str] = []
 
     work: list[dict] = []
     noise: list[dict] = []
@@ -2181,7 +1983,6 @@ def pack_candidates(
         it["module"] = infer_module(it)
         it["duration_minutes"] = atom_duration_minutes(it, clamp_min=atom_clamp_min)
         it["level"] = "atom"
-        it["phase"] = _lifecycle_phase_for_atom(it)
         if is_noise_atom(it):
             it["noise"] = True
             noise.append(it)
@@ -2189,58 +1990,48 @@ def pack_candidates(
             it["noise"] = False
             work.append(it)
 
-    # ruído → pacotes OPS por fase/módulo/dia (não ProjectTask individuais)
-    noise_by_key: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
+    # ruído → pacotes OPS por módulo/dia (não ProjectTask individuais)
+    noise_by_key: dict[tuple[str, str], list[dict]] = defaultdict(list)
     for n in noise:
         end = _parse_dt(n.get("real_end") or n.get("plan_end") or n.get("plan_start"))
         day = end.date().isoformat() if end else "nodate"
-        noise_by_key[(n["phase"], n["module"], day)].append(n)
+        noise_by_key[(n["module"], day)].append(n)
 
-    # Chave: fase GEP + semana + módulo + dia
-    buckets: dict[tuple[str, str, str, str], list[dict]] = defaultdict(list)
+    # Chave: modulo + pai + dia (arquivos distintos no mesmo contexto entram juntos)
+    buckets: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
     for it in work:
-        phase = it["phase"]
-        _ensure_lifecycle_phase(phases_by_code, phase)
+        module = it["module"]
+        parent = (it.get("parent_code") or "").upper().strip()
+        if not parent or parent not in phases_by_code:
+            phase = _ensure_module_phase(phases_by_code, module)
+            if phase["code"] not in module_phases_added and phase.get("pack_generated"):
+                module_phases_added.append(phase["code"])
+            parent = phase["code"]
+            it["parent_code"] = parent
         end = _parse_dt(it.get("real_end") or it.get("plan_end") or it.get("plan_start"))
         day = end.date().isoformat() if end else "nodate"
-        week = _iso_week_key(day)
-        it["pack_week"] = week
-        buckets[(phase, week, it["module"], day)].append(it)
+        buckets[(module, parent, day)].append(it)
 
-    # grupos crus antes da numeração F#.S#.P#
-    raw_groups: list[dict] = []
+    packages: list[dict] = []
+    pack_seq: dict[str, int] = defaultdict(int)
 
-    def flush_group(
-        phase: str,
-        week: str,
-        module: str,
-        day: str,
-        group: list[dict],
-        *,
-        noise_package: bool = False,
-    ) -> None:
+    def flush_group(module: str, parent: str, day: str, group: list[dict]) -> None:
         if not group:
             return
+        pack_seq[parent] += 1
+        seq = pack_seq[parent]
         effort = sum(float(a.get("duration_minutes") or 0) for a in group)
         st, pct, state = _status_from_atoms(group)
-        plan_starts = [
-            _parse_dt(a.get("plan_start")) or _parse_dt(a.get("real_start")) for a in group
-        ]
-        plan_ends = [
-            _parse_dt(a.get("plan_end")) or _parse_dt(a.get("real_end")) for a in group
-        ]
-        real_starts = [_parse_dt(a.get("real_start")) for a in group]
-        real_ends = [_parse_dt(a.get("real_end")) for a in group]
-        plan_starts_v = [d for d in plan_starts if d]
-        plan_ends_v = [d for d in plan_ends if d]
-        real_starts_v = [d for d in real_starts if d]
-        real_ends_v = [d for d in real_ends if d]
-        preferred = None
-        if len(group) == 1:
-            preferred = _canonical_task_code(group[0].get("code"), phase)
+        starts = [_parse_dt(a.get("real_start") or a.get("plan_start")) for a in group]
+        ends = [_parse_dt(a.get("real_end") or a.get("plan_end")) for a in group]
+        starts_v = [d for d in starts if d]
+        ends_v = [d for d in ends if d]
+        # código: 1 átomo com code estável → preserva; senão PARENT.PKGn (evita colidir com S.Pn do plano)
+        if len(group) == 1 and group[0].get("code"):
+            code = str(group[0]["code"]).upper()
+        else:
+            code = f"{parent}.PKG{seq}"
         title = _synthesize_package_title(group, module, day)
-        if noise_package:
-            title = f"[{module}] checklist operacional ({day}, {len(group)} itens)"[:255]
         repos: set[str] = set()
         sources: list[dict] = []
         for a in group:
@@ -2262,20 +2053,22 @@ def pack_candidates(
                     "sources": a.get("sources") or [],
                 }
             )
+            a["packed_into"] = code
         pkg = {
             "kind": "item",
             "level": "package",
-            "phase": phase,
-            "pack_week": week,
-            "preferred_code": preferred,
+            "code": code,
+            "parent_code": parent,
             "title": title,
             "status_local": st,
             "percent_done": pct,
             "state": state,
-            "plan_start": _fmt_dt(min(plan_starts_v)) if plan_starts_v else None,
-            "plan_end": _fmt_dt(max(plan_ends_v)) if plan_ends_v else None,
-            "real_start": None,
-            "real_end": None,
+            "plan_start": _fmt_dt(min(starts_v)) if starts_v else None,
+            "plan_end": _fmt_dt(max(ends_v)) if ends_v else None,
+            "real_start": _fmt_dt(min(starts_v)) if starts_v and st != "pending" else (
+                _fmt_dt(min(starts_v)) if starts_v and state == "gep7" else None
+            ),
+            "real_end": _fmt_dt(max(ends_v)) if ends_v and st == "done" else None,
             "temporal_source": "pack",
             "confidence": max(float(a.get("confidence") or 0.8) for a in group),
             "source_repos": sorted(repos),
@@ -2285,35 +2078,29 @@ def pack_candidates(
             "atom_count": len(group),
             "atoms": atom_refs,
             "estimated_minutes": int(round(effort)),
-            "noise_package": noise_package,
-            "_atoms": group,
         }
-        if st in ("done", "partial", "archived") and real_starts_v:
-            pkg["real_start"] = _fmt_dt(min(real_starts_v))
-            if real_ends_v:
-                pkg["real_end"] = _fmt_dt(max(real_ends_v))
-            elif st == "done" and plan_ends_v:
-                pkg["real_end"] = _fmt_dt(max(plan_ends_v))
+        # datas reais: se há done/partial com janela
+        if starts_v and st in ("done", "partial"):
+            pkg["real_start"] = _fmt_dt(min(starts_v))
+        if ends_v and st == "done":
+            pkg["real_end"] = _fmt_dt(max(ends_v))
         if not pkg.get("plan_start") and pkg.get("real_start"):
             pkg["plan_start"] = pkg["real_start"]
-        if not pkg.get("plan_end") and (pkg.get("real_end") or plan_ends_v):
-            pkg["plan_end"] = pkg.get("real_end") or _fmt_dt(max(plan_ends_v))
-        raw_groups.append(pkg)
+        if not pkg.get("plan_end") and pkg.get("real_end"):
+            pkg["plan_end"] = pkg["real_end"]
+        elif not pkg.get("plan_end") and ends_v:
+            pkg["plan_end"] = _fmt_dt(max(ends_v))
+        packages.append(pkg)
 
-    for (phase, week, module, day), lst in sorted(buckets.items()):
+    for (module, parent, day), lst in sorted(buckets.items()):
         lst = sorted(lst, key=_atom_sort_key)
         cur: list[dict] = []
         cur_mins = 0.0
         prev_end: datetime | None = None
 
-        def _flush(
-            _phase: str = phase,
-            _week: str = week,
-            _module: str = module,
-            _day: str = day,
-        ) -> None:
+        def _flush() -> None:
             nonlocal cur, cur_mins, prev_end
-            flush_group(_phase, _week, _module, _day, cur)
+            flush_group(module, parent, day, cur)
             cur = []
             cur_mins = 0.0
             prev_end = None
@@ -2337,75 +2124,29 @@ def pack_candidates(
         if cur:
             _flush()
 
-    for (phase, module, day), lst in sorted(noise_by_key.items()):
+    # pacotes de ruído (processo) sob M.OPS ou módulo
+    for (module, day), lst in sorted(noise_by_key.items()):
         if not lst:
             continue
-        week = _iso_week_key(day)
+        phase = _ensure_module_phase(phases_by_code, module)
+        if phase["code"] not in module_phases_added and phase.get("pack_generated"):
+            module_phases_added.append(phase["code"])
         for a in lst:
-            a["phase"] = phase
-            a["pack_week"] = week
-        flush_group(phase, week, module, day, lst, noise_package=True)
+            a["parent_code"] = phase["code"]
+            a["packed_into"] = f"{phase['code']}.OPS"
+        # um pacote OPS por módulo/dia
+        flush_group(module, phase["code"], day, lst)
+        # renomear último pacote para deixar claro
+        if packages:
+            packages[-1]["title"] = f"[{module}] checklist operacional ({day}, {len(lst)} itens)"[:255]
+            packages[-1]["code"] = f"{phase['code']}.OPS.{day.replace('-', '')[-6:]}"
+            packages[-1]["noise_package"] = True
 
-    # Numerar sessões por fase (ordem de semana) e P sob cada S
-    week_order: dict[str, list[str]] = defaultdict(list)
-    for pkg in raw_groups:
-        phase = pkg["phase"]
-        week = pkg["pack_week"]
-        if week not in week_order[phase]:
-            week_order[phase].append(week)
-    for phase in week_order:
-        week_order[phase].sort()
-
-    session_code_of: dict[tuple[str, str], str] = {}
-    for phase, weeks in week_order.items():
-        for idx, week in enumerate(weeks, start=1):
-            session_code_of[(phase, week)] = f"{phase}.S{idx}"
-
-    packages: list[dict] = []
-    pack_seq: dict[str, int] = defaultdict(int)
-    used_codes: set[str] = set()
-
-    for pkg in sorted(
-        raw_groups,
-        key=lambda p: (
-            p.get("phase") or "",
-            p.get("pack_week") or "",
-            p.get("plan_start") or p.get("real_start") or "",
-            p.get("title") or "",
-        ),
-    ):
-        phase = pkg["phase"]
-        week = pkg["pack_week"]
-        session = session_code_of[(phase, week)]
-        preferred = pkg.pop("preferred_code", None)
-        atoms = pkg.pop("_atoms", [])
-        if preferred and preferred.startswith(f"{session}.") and preferred not in used_codes:
-            code = preferred
-        else:
-            pack_seq[session] += 1
-            code = f"{session}.P{pack_seq[session]}"
-            while code in used_codes:
-                pack_seq[session] += 1
-                code = f"{session}.P{pack_seq[session]}"
-        used_codes.add(code)
-        pkg["code"] = code
-        pkg["parent_code"] = session
-        pkg["level"] = "P"
-        for a in atoms:
-            a["packed_into"] = code
-            a["parent_code"] = session
-            a["phase"] = phase
-        packages.append(pkg)
-
-    all_phases = [phases_by_code[c] for c in _LIFECYCLE_PHASE_TITLES if c in phases_by_code]
-    # parent temporário = fase para enriquecer plan_* da F a partir dos P
-    for pkg in packages:
-        pkg["_rollup_parent"] = pkg["parent_code"]
-        pkg["parent_code"] = pkg["phase"]
+    # enriquecer fases módulo com datas dos pacotes
+    all_phases = list(phases_by_code.values())
     enrich_phase_dates_from_children(all_phases + packages)
-    for pkg in packages:
-        pkg["parent_code"] = pkg.pop("_rollup_parent")
 
+    # ordenar
     def _cand_key(x: dict):
         return (
             0 if x.get("kind") == "phase" else 1,
@@ -2416,7 +2157,6 @@ def pack_candidates(
 
     apply_cands = sorted(all_phases + packages, key=_cand_key)
     atoms_audit = work + noise
-    enrich_atom_audit_durations(atoms_audit)
     effort_total = sum(float(p.get("effort_minutes") or 0) for p in packages)
     meta = {
         "mode": "on",
@@ -2428,9 +2168,7 @@ def pack_candidates(
         "atoms_noise": len(noise),
         "packages": len(packages),
         "phases": len(all_phases),
-        "sessions": len(session_code_of),
-        "module_phases_added": [],
-        "lifecycle_phases": sorted(phases_by_code),
+        "module_phases_added": sorted(set(module_phases_added)),
         "effort_minutes_total": int(round(effort_total)),
         "effort_hours_total": round(effort_total / 60.0, 1),
         "by_module": {},
@@ -2443,6 +2181,257 @@ def pack_candidates(
         by_mod[m]["effort_minutes"] += int(p.get("effort_minutes") or 0)
     meta["by_module"] = dict(by_mod)
     return apply_cands, atoms_audit, meta
+
+
+_STATUS_SHORT = {
+    "pending": "Pend",
+    "done": "Done",
+    "partial": "Part",
+    "archived": "Arch",
+}
+# Largura maxima da linha da arvore (evita wrap no viewer / terminal)
+TREE_LINE_MAX = 111
+
+
+def _tree_status_label(c: dict) -> str:
+    st = _STATUS_SHORT.get(str(c.get("status_local") or "pending").lower(), "Pend")
+    pct = c.get("percent_done")
+    try:
+        pct_s = f"{int(pct)}%"
+    except (TypeError, ValueError):
+        pct_s = "0%"
+    return f"{st} - {pct_s}"
+
+
+def _tree_dates_label(c: dict) -> str:
+    parts: list[str] = []
+    plan = (c.get("plan_start") or "")[:10]
+    real = (c.get("real_end") or "")[:10]
+    if plan:
+        parts.append(f"Pln_ini: {plan}")
+    if real:
+        parts.append(f"Real_fim: {real}")
+    return " - ".join(parts)
+
+
+def _tree_title(c: dict) -> str:
+    code = (c.get("code") or "").strip()
+    title = re.sub(r"\s+", " ", (c.get("title") or "").strip())
+    if code:
+        # "F1. Planejamento" / "F2.S1 — Destravamento" / "F2.S1.P1 Login"
+        stripped = re.sub(
+            rf"^{re.escape(code)}\.?\s*[—\-–:]?\s*",
+            "",
+            title,
+            count=1,
+            flags=re.I,
+        )
+        title = stripped if stripped else title
+    title = title.replace("|", "/")
+    return title or code or "(sem titulo)"
+
+
+def _fit_tree_line(prefix: str, code: str, title: str, meta: str, dates: str,
+                    *, max_len: int = TREE_LINE_MAX) -> str:
+    """Monta a linha e encurta o titulo (depois datas) para caber em max_len."""
+    ell = "…"
+
+    def build(tit: str, dts: str) -> str:
+        tail = meta + (f" - {dts}" if dts else "")
+        return f"{prefix}{code} — {tit} - {tail}"
+
+    line = build(title, dates)
+    if len(line) <= max_len:
+        return line
+
+    # 1) Encurta titulo
+    overhead = len(build("", dates))  # sem titulo
+    # " — " + " - " ja entram no build; titulo vazio ainda tem " —  - "
+    room = max_len - overhead
+    if room >= 8:
+        tit = title[: room - 1].rstrip(" -—,.") + ell
+        line = build(tit, dates)
+        if len(line) <= max_len:
+            return line
+
+    # 2) Drop Real_fim, mantem so Pln_ini se houver
+    plan_only = ""
+    m = re.search(r"Pln_ini: \d{4}-\d{2}-\d{2}", dates or "")
+    if m:
+        plan_only = m.group(0)
+    overhead = len(build("", plan_only))
+    room = max_len - overhead
+    if room >= 8:
+        tit = title[: room - 1].rstrip(" -—,.") + ell
+        line = build(tit, plan_only)
+        if len(line) <= max_len:
+            return line
+
+    # 3) Sem datas
+    overhead = len(build("", ""))
+    room = max_len - overhead
+    if room >= 4:
+        tit = title[: max(1, room - 1)].rstrip(" -—,.") + ell
+        line = build(tit, "")
+        if len(line) <= max_len:
+            return line
+
+    # 4) Corte duro
+    return (build(title, dates)[: max_len - 1] + ell)[:max_len]
+
+
+def _code_sort_key(code: str) -> tuple:
+    m = re.match(r"^F(\d+)(?:\.S(\d+)(?:\.P(\d+))?)?$", (code or "").upper())
+    if not m:
+        return (9999, 9999, 9999, code or "")
+    return (
+        int(m.group(1)),
+        int(m.group(2) or 0),
+        int(m.group(3) or 0),
+        code or "",
+    )
+
+
+def format_fsp_tree_lines(cands: list[dict]) -> list[str]:
+    """Arvore monoespace F → S → P para o markdown do retro-scan."""
+    by_code: dict[str, dict] = {}
+    for c in cands:
+        code = (c.get("code") or "").strip().upper()
+        if not code:
+            continue
+        level = c.get("level")
+        if not level:
+            if c.get("kind") == "phase" or re.fullmatch(r"F\d+", code):
+                level = "F"
+            elif re.fullmatch(r"F\d+\.S\d+", code):
+                level = "S"
+            elif re.fullmatch(r"F\d+\.S\d+\.P\d+", code):
+                level = "P"
+            else:
+                continue
+        c = dict(c)
+        c["level"] = level
+        c["code"] = code
+        prev = by_code.get(code)
+        if prev is None or len(_tree_title(c)) > len(_tree_title(prev)):
+            by_code[code] = c
+
+    phases = sorted(
+        [c for c in by_code.values() if c.get("level") == "F"],
+        key=lambda c: _code_sort_key(c.get("code") or ""),
+    )
+    sessions = [c for c in by_code.values() if c.get("level") == "S"]
+    tasks = [c for c in by_code.values() if c.get("level") == "P"]
+
+    sess_by_phase: dict[str, list[dict]] = defaultdict(list)
+    for s in sessions:
+        parent = (s.get("parent_code") or "").upper()
+        if not parent:
+            m = re.match(r"^(F\d+)\.", s.get("code") or "")
+            parent = m.group(1) if m else ""
+        sess_by_phase[parent].append(s)
+    for lst in sess_by_phase.values():
+        lst.sort(key=lambda c: _code_sort_key(c.get("code") or ""))
+
+    task_by_sess: dict[str, list[dict]] = defaultdict(list)
+    for t in tasks:
+        parent = (t.get("parent_code") or "").upper()
+        if not parent:
+            m = re.match(r"^(F\d+\.S\d+)\.", t.get("code") or "")
+            parent = m.group(1) if m else ""
+        task_by_sess[parent].append(t)
+    for lst in task_by_sess.values():
+        lst.sort(key=lambda c: _code_sort_key(c.get("code") or ""))
+
+    def node_line(prefix: str, c: dict) -> str:
+        return _fit_tree_line(
+            prefix,
+            c.get("code") or "",
+            _tree_title(c),
+            _tree_status_label(c),
+            _tree_dates_label(c),
+            max_len=TREE_LINE_MAX,
+        )
+
+    out: list[str] = []
+    if not phases and not sessions and not tasks:
+        out.append("(sem candidatos F/S/P)")
+        return out
+
+    rendered_s: set[str] = set()
+    rendered_p: set[str] = set()
+
+    for phase in phases:
+        out.append(node_line("", phase))
+        pcode = phase.get("code") or ""
+        sess_list = sess_by_phase.get(pcode, [])
+        for si, sess in enumerate(sess_list):
+            s_last = si == len(sess_list) - 1
+            s_branch = "└─ " if s_last else "├─ "
+            s_pad = "   " if s_last else "│  "
+            out.append(node_line(s_branch, sess))
+            scode = sess.get("code") or ""
+            rendered_s.add(scode)
+            t_list = task_by_sess.get(scode, [])
+            for ti, task in enumerate(t_list):
+                t_last = ti == len(t_list) - 1
+                t_branch = "└─ " if t_last else "├─ "
+                out.append(node_line(f"{s_pad}{t_branch}", task))
+                rendered_p.add(task.get("code") or "")
+
+    # Sessoes orfas (pai F ausente)
+    orphan_s = [
+        s
+        for s in sorted(sessions, key=lambda c: _code_sort_key(c.get("code") or ""))
+        if (s.get("code") or "") not in rendered_s
+    ]
+    for si, sess in enumerate(orphan_s):
+        s_last = si == len(orphan_s) - 1
+        out.append(node_line("└─ " if s_last else "├─ ", sess))
+        scode = sess.get("code") or ""
+        rendered_s.add(scode)
+        t_list = task_by_sess.get(scode, [])
+        s_pad = "   " if s_last else "│  "
+        for ti, task in enumerate(t_list):
+            t_last = ti == len(t_list) - 1
+            out.append(node_line(f"{s_pad}{'└─ ' if t_last else '├─ '}", task))
+            rendered_p.add(task.get("code") or "")
+
+    orphan_p = [
+        t
+        for t in sorted(tasks, key=lambda c: _code_sort_key(c.get("code") or ""))
+        if (t.get("code") or "") not in rendered_p
+        and re.fullmatch(r"F\d+\.S\d+\.P\d+", t.get("code") or "")
+    ]
+    for task in orphan_p:
+        out.append(node_line("│  ├─ ", task))
+
+    # Pacotes do modo --pack (codes fora de F#.S#.P#)
+    orphan_pack = [
+        c
+        for c in by_code.values()
+        if not re.fullmatch(r"F\d+(?:\.S\d+(?:\.P\d+)?)?", c.get("code") or "")
+    ]
+    if orphan_pack:
+        out.append("")
+        out.append("# itens/pacotes fora de F#.S#.P#")
+        for c in sorted(
+            orphan_pack, key=lambda x: (x.get("module") or "", x.get("code") or "")
+        )[:200]:
+            mod = c.get("module") or ""
+            atoms = c.get("atom_count")
+            mins = c.get("effort_minutes")
+            extra = []
+            if mod:
+                extra.append(f"mod={mod}")
+            if atoms:
+                extra.append(f"atomos={atoms}")
+            if mins:
+                extra.append(f"min={mins}")
+            suffix = f" [{', '.join(extra)}]" if extra else ""
+            out.append(node_line("· ", c) + suffix)
+
+    return out
 
 
 def _finalize_candidate_actions(
@@ -2460,7 +2449,7 @@ def _finalize_candidate_actions(
             c["action"] = "SKIP"
         else:
             c["action"] = "NEW"
-        if c.get("atoms") and c.get("level") in ("package", "P", "item"):
+        if c.get("level") == "package" and c.get("atoms"):
             content = build_package_content(
                 [
                     {
@@ -2589,14 +2578,13 @@ def main() -> int:
             gap_min=pack_gap,
         )
 
-    cands, legacy_r = ensure_fsp(cands, repo_root)
-    cands = dedupe(cands)
     _finalize_candidate_actions(
         cands,
         project_id=project_id,
         existing_names=existing_names,
         existing_codes=existing_codes,
     )
+    cands, legacy_r = ensure_fsp(cands, repo_root)
 
     stamp = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d_%H%M")
     bundle = ws.get("bundle", "workspace")
@@ -2665,10 +2653,15 @@ def main() -> int:
         f"sessoes e tarefas={report['items']}; "
         f"NEW={report['new']}, SKIP={report['skip']})",
         "",
+        "## Arvore F / S / P",
+        "",
+        "```",
     ]
-    lines.extend(_md_candidate_table(cands))
+    lines.extend(format_fsp_tree_lines(cands))
+    lines.append("```")
+
+    lines.extend(["", "## Esforco por modulo (pacotes)", ""])
     if pack_meta and pack_meta.get("by_module"):
-        lines.extend(["", "## Esforco por modulo (pacotes)", ""])
         lines.append("| Modulo | Pacotes | Atomos | Horas |")
         lines.append("|--------|---------|--------|-------|")
         for mod, stats in sorted(pack_meta["by_module"].items()):
@@ -2676,6 +2669,11 @@ def main() -> int:
             lines.append(
                 f"| {mod} | {stats['packages']} | {stats['atoms']} | {hours} |"
             )
+    else:
+        lines.append(
+            "_Pack off — sem agregacao por modulo. Rode com `--pack` para preencher "
+            "Pacotes / Atomos / Horas._"
+        )
     lines.extend(
         [
             "",

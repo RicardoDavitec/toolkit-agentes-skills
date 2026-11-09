@@ -27,6 +27,9 @@ Checklist operacional complementar:
 Referencias: `AGENTS.md` do produto ·
 `docs/05_progresso/planos_ativos/README.md` ·
 `docs/06_glpi/HIERARQUIA_F_S_P_GLPI.md`
+Guia do padrão de documentação: 
+`docs/12_padrao_documentacao/01_guias/G09_commits_prs_e_rastreabilidade.md`
+(resume esta skill; em divergência, **esta skill** prevalece).
 
 ---
 
@@ -101,10 +104,12 @@ Nunca inventar `inicio_real` / `fim_real`. Sem evidencia, o campo fica vazio.
    sugerir `glpi-migrate-codes --dry-run` antes de prosseguir.
 3. Atualizar checklists + `%` do S pai (coerente com o rollup ponderado).
 4. Atualizar documentos de apoio afetados (dicionario, ADR, inventario LGPD, runbook).
-5. Incluir os `.md` de plano no **mesmo** `git add` do codigo.
-6. So entao `git commit` no padrao.
-7. Push apenas se o usuario pediu (`exporte`). **Nunca** `--force` em `main`/`master`.
-8. Sugerir (nao executar sem pedido):
+5. Se houver `.md` de `docs/` no stage, rodar `python3 scripts/docs/lint_docs.py`
+   e corrigir os erros antes do commit (avisos não bloqueiam).
+6. Incluir os `.md` de plano no **mesmo** `git add` do codigo.
+7. So entao `git commit` no padrao.
+8. Push apenas se o usuario pediu (`exporte`). **Nunca** `--force` em `main`/`master`.
+9. Sugerir (nao executar sem pedido):
    ~~~bash
    ./tools/glpi/bin/glpi-commit-harvest --since-last-sync
    ./tools/glpi/bin/glpi-tree-validate --remote --project-code=<CODE>
@@ -129,6 +134,7 @@ Nunca inventar `inicio_real` / `fim_real`. Sem evidencia, o campo fica vazio.
 - [ ] Planos F/S/P atualizados **ou** justificativa de excecao
 - [ ] `inicio_real` / `fim_real` / `%` coerentes com o marcador (nunca inventados)
 - [ ] Documentos de apoio afetados atualizados
+- [ ] Documentação no stage validada com `python3 scripts/docs/lint_docs.py` (0 erros)
 - [ ] Build/teste da app alterada (quando houver codigo)
 - [ ] Sem secrets no stage (`git diff --cached | grep -iE 'token|password'`)
 - [ ] Mensagem no padrao gitmoji + tipo + escopo + timestamp PT-BR, **sem acentos**
@@ -151,6 +157,9 @@ Nunca inventar `inicio_real` / `fim_real`. Sem evidencia, o campo fica vazio.
 | `glpi-progress-rollup` | consolidar `%` e estado para cima apos o commit |
 | `glpi-tree-validate` | conferir coerencia antes de qualquer `--apply` |
 | `inserir-pendencia` | pendencias atemporais (nao substitui fechar P) |
+| `doc-lint` | valida front matter e nomes dos documentos de `docs/` antes do commit |
+| `doc-gate-fase` | confere os critérios de saída da fase antes de fechá-la |
+
 
 ---
 

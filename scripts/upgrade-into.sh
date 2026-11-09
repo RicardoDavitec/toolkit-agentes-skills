@@ -937,6 +937,27 @@ ensure_gitignore() {
   ok ".gitignore atualizado com ${#missing[@]} padrao(oes)."
 }
 
+# Padrao 12 + skills/scripts doc-* via instalar_docs.sh (cp -n; dry-run seguro)
+install_docs_padrao() {
+  step "Padrao de documentacao (instalar_docs.sh)"
+  local instalador="${SOURCE_DIR}/scripts/docs/instalar_docs.sh"
+  if [[ ! -f "$instalador" ]]; then
+    warn "instalador ausente no kit: scripts/docs/instalar_docs.sh"
+    return 0
+  fi
+  if [[ "$SOURCE_DIR" == "$TARGET_DIR" ]]; then
+    info "alvo = kit fonte — instalar_docs nao aplica"
+    return 0
+  fi
+  if (( APPLY == 0 )); then
+    info "[dry-run] rodaria: bash scripts/docs/instalar_docs.sh ${TARGET_DIR}"
+    info "[dry-run] (cp -n: so cria arquivos ausentes — skills doc-*, scripts/docs, docs/12_padrao_documentacao)"
+    return 0
+  fi
+  bash "$instalador" "$TARGET_DIR"
+  ok "Padrao de documentacao instalado/atualizado (sem sobrescrever existentes)."
+}
+
 post_validate() {
   (( RUN_VALIDATE == 0 )) && { info "Validacao pos-upgrade desativada."; return 0; }
   (( APPLY == 0 ))        && { info "[dry-run] validacao pos-upgrade nao executada."; return 0; }
@@ -1103,6 +1124,7 @@ main() {
   self_update
   ensure_gitignore
   stamp_version
+  install_docs_padrao
 
   # --- fase 4: verificacao final ---
   post_validate

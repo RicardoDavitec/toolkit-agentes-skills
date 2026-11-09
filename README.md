@@ -56,6 +56,9 @@ Os scripts copiam `.cursor/skills` e `.cursor/agents`, criam o symlink
   `03_implementacao` · `04_operacao`
 - `docs/05_progresso/{planos_ativos,geral,legados,pendencias,historico}`
 - `docs/06_glpi`
+- `docs/12_padrao_documentacao` (guias, modelos, exemplos) — via
+  `full-skeleton` e/ou `scripts/docs/instalar_docs.sh` (tambem no fim do
+  bootstrap/upgrade; `cp -n`)
 
 ## Modelo F/S/P
 

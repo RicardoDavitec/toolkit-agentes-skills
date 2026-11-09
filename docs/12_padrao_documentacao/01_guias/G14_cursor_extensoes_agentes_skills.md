@@ -3,8 +3,8 @@ id: GUI-014
 tipo: guia
 titulo: Cursor, extensões, agentes e skills
 status: rascunho
-versao: 0.2.0
-data: 2026-11-09
+versao: 0.3.0
+data: 2026-11-10
 autor: Ricardo
 classificacao: publico
 ---
@@ -133,10 +133,11 @@ Os agentes e skills que já existiam (`glpi-escriba`, `documente-o-plano`, `comm
 
 ## 7. Instalação e integração
 
-1. `scripts/docs/instalar_docs.sh [diretório]` copia para o projeto `.vscode/`, a regra do Cursor, os agentes, as skills, os scripts de documentação e o padrão `docs/12_padrao_documentacao/` (guias, modelos, exemplos), e cria as pastas vazias de `docs/`. Nunca sobrescreve arquivo existente.
-2. A chamada a esse script a partir de `bootstrap-into.sh` e `upgrade-into.sh` **ainda não foi feita**. Esses dois scripts existem no repositório, mas eu não os li. *(A confirmar.)*
-3. O `.github/workflows/ci.yml` já roda `lint_template.py` e `lint_docs.py`. O job de documentação só executa se `scripts/docs/lint_docs.py` existir.
-4. Antes de publicar uma nova versão do template: `python3 scripts/lint_template.py` e `python3 scripts/docs/lint_docs.py`.
+1. `scripts/docs/instalar_docs.sh [diretório]` copia para o projeto `.vscode/`, a regra do Cursor, os agentes, as skills, os scripts de documentação e o padrão `docs/12_padrao_documentacao/` (guias, modelos, exemplos), e cria as pastas vazias de `docs/`. Nunca sobrescreve arquivo existente (`cp -n`).
+2. `bootstrap-into.sh` chama `instalar_docs.sh` ao final (todos os perfis). No perfil `full-skeleton`, também faz `rsync` de `docs/12_padrao_documentacao/` junto com `00`–`11`.
+3. `upgrade-into.sh` chama `instalar_docs.sh` ao final: em dry-run só anuncia; com `--apply` executa (respeita `cp -n` e `GLPI_DRY_RUN=1`).
+4. O `.github/workflows/ci.yml` já roda `lint_template.py` e `lint_docs.py`. O job de documentação só executa se `scripts/docs/lint_docs.py` existir.
+5. Antes de publicar uma nova versão do template: `python3 scripts/lint_template.py` e `python3 scripts/docs/lint_docs.py`.
 
 ## 8. Rotina do desenvolvedor no Cursor
 

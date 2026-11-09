@@ -224,7 +224,8 @@ fi
 
 if [[ "$PROFILE" == "full-skeleton" ]]; then
   for d in 00_visao_geral 01_requisitos 02_arquitetura 03_implementacao 04_operacao \
-           07_doc_academica 08_imagens 09_dados_e_tabelas 10_setup 11_ia; do
+           07_doc_academica 08_imagens 09_dados_e_tabelas 10_setup 11_ia \
+           12_padrao_documentacao; do
     mkdir -p "$TARGET/docs/$d"
     rsync -a "$KIT_ROOT/docs/$d/" "$TARGET/docs/$d/"
   done
@@ -238,6 +239,23 @@ if [[ "$PROFILE" == "full-skeleton" ]]; then
   fi
 fi
 
+# Padrao de documentacao (skills doc-*, scripts/docs, 12_padrao): cp -n, nao sobrescreve
+run_instalar_docs() {
+  local instalador="${KIT_ROOT}/scripts/docs/instalar_docs.sh"
+  if [[ ! -f "$instalador" ]]; then
+    echo "aviso: instalador ausente: scripts/docs/instalar_docs.sh" >&2
+    return 0
+  fi
+  if [[ "$KIT_ROOT" == "$TARGET" ]]; then
+    echo "instalar_docs: alvo = kit fonte — nada a copiar"
+    return 0
+  fi
+  echo "Instalando padrao de documentacao (cp -n)..."
+  bash "$instalador" "$TARGET"
+}
+
+run_instalar_docs
+
 cat <<EOF
 
 Bootstrap concluido.
@@ -248,9 +266,11 @@ Proximos passos:
   3. ./tools/glpi/glpi states discover --apply
   4. ./tools/glpi/bin/glpi-seed-phases --template=corporate-phases
   5. ./tools/glpi/bin/glpi-retro-scan
+  6. python3 scripts/docs/lint_docs.py
 
 Ou use o assistente: $KIT_ROOT/scripts/install-glpi.sh --target=$TARGET
 
 Docs GLPI: docs/06_glpi/
+Padrao docs: docs/12_padrao_documentacao/
 Plano:     docs/05_progresso/geral/
 EOF

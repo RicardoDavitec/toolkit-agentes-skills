@@ -1,7 +1,7 @@
 # Manual de integração GLPI — pmf-dev-kit
 
 > Guia passo a passo para implantar a integração GLPI em **projetos novos** e **pré-existentes**, a partir deste repositório-fonte.  
-> **Página de rosto (Gitness):** o mesmo conteúdo está no [`README.md`](../../README.md) da raiz.
+> **Página de rosto (Gitness):** o mesmo conteúdo está no `README.md` da raiz do repositório.
 
 | | |
 |---|---|
@@ -592,7 +592,7 @@ Preserva `.glpi/project.yaml` / `workspace.yaml` existentes; atualiza tools, ski
 | `pmf-core` | Sim | Sim | Sim | `05` + `06` |
 | `full-skeleton` | Sim | Sim | Sim | Completa |
 
-Numeração de pastas: [`../00_visao_geral/NUMERACAO_DOCS.md`](../00_visao_geral/NUMERACAO_DOCS.md) — GLPI é **`06_glpi`** (não `00`).
+Numeração de pastas: [`../README.md`](../README.md) — GLPI é **`06_glpi`** (não `00`).
 
 ---
 
@@ -625,7 +625,7 @@ Numeração de pastas: [`../00_visao_geral/NUMERACAO_DOCS.md`](../00_visao_geral
 | Bootstrap | `scripts/bootstrap-into.sh` |
 | Upgrade | `scripts/upgrade-into.sh` |
 | Gitness | https://gitness.franca.sp.gov.br/PMF-Integracao_GLPI/pmf-dev-kit |
-| Autoria | [`AUTHORS.md`](../../AUTHORS.md) · [`LICENSE`](../../LICENSE) |
+| Autoria | `AUTHORS.md` · `LICENSE` (raiz do repositório) |
 
 ---
 
@@ -634,7 +634,7 @@ Numeração de pastas: [`../00_visao_geral/NUMERACAO_DOCS.md`](../00_visao_geral
 **Dr. Ricardo David** — autor principal do kit, CLI GLPI, assistentes de instalação e documentação.  
 **Instituição patrocinadora:** PMF — DTI.  
 E-mails: [rdavid38@hotmail.com](mailto:rdavid38@hotmail.com) (pessoal) · [ricardodavid@franca.sp.gov.br](mailto:ricardodavid@franca.sp.gov.br) (corporativo).  
-Detalhes, citação e licença MIT: [`AUTHORS.md`](../../AUTHORS.md) · [`LICENSE`](../../LICENSE).
+Detalhes, citação e licença MIT: `AUTHORS.md` · `LICENSE` (raiz do repositório).
 
 ---
 

@@ -7,8 +7,8 @@ Pasta para dívidas técnicas e follow-ups **fora** do plano S/P do dia (skill `
 | [`CHECKLIST_PENDENCIAS.md`](CHECKLIST_PENDENCIAS.md) | Checklist canônico (somente itens) |
 | Este `README.md` | Instruções e convenções |
 
-**Skill de alimentação:** `inserir-pendencia` (`.github/skills/inserir-pendencia/`).  
-**Padrão de checklist:** o mesmo da skill [`documente-o-plano`](../../../.github/skills/documente-o-plano/SKILL.md).
+**Skill de alimentação:** `inserir-pendencia` (`.cursor/skills/inserir-pendencia/`).  
+**Padrão de checklist:** o mesmo da skill `documente-o-plano` (`.cursor/skills/documente-o-plano/SKILL.md`).
 
 ---
 

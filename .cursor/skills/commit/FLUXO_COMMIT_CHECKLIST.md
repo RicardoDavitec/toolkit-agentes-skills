@@ -36,6 +36,7 @@ Em palavras: quem muda código precisa mudar o plano **no mesmo commit**, salvo 
   - `%` do S pai coerente com o rollup ponderado
 - [ ] Documentos de apoio afetados foram atualizados (dicionário de dados, ADR, inventário LGPD, runbook)
 - [ ] Os arquivos de plano estão no **mesmo** `git add` do código
+- [ ] Se houver `.md` de `docs/` no stage: `python3 scripts/docs/lint_docs.py` com 0 erros
 - [ ] Nenhum segredo no stage: `git diff --cached | grep -iE 'token|password'`
 - [ ] Mensagem no padrão da seção 4
 

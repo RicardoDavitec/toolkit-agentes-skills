@@ -27,6 +27,15 @@ for s in doc-novo doc-adr doc-dados-schema doc-lgpd-inventario doc-rastreabilida
   copiar ".cursor/skills/$s/SKILL.md"
 done
 
+# Padrao 12: guias, modelos e exemplos (nao sobrescreve existentes)
+if [[ -d "$ORIGEM/docs/12_padrao_documentacao" ]]; then
+  while IFS= read -r -d '' f; do
+    rel="${f#"$ORIGEM"/}"
+    copiar "$rel"
+  done < <(find "$ORIGEM/docs/12_padrao_documentacao" -type f -print0)
+fi
+copiar "docs/README.md"
+
 for d in 00_visao_geral 01_requisitos 02_arquitetura/adr 03_implementacao/testes \
          03_implementacao/homologacao 04_operacao 09_dados_e_tabelas/er \
          09_dados_e_tabelas/dicionario 09_dados_e_tabelas/enums 09_dados_e_tabelas/lgpd \

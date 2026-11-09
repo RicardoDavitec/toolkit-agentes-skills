@@ -1,5 +1,5 @@
 # Modelo de CI do kit. Para ativar: copiar para .github/workflows/ci.yml
-# Referencia: docs/12_padrao_documentacao/01_guias/G13 (CI) e G09 (commits)
+# Referencia: docs/12_padrao_documentacao/01_guias/G09 (commits) e skill commit
 name: ci
 
 on:
@@ -120,7 +120,8 @@ jobs:
           ARQUIVOS=$(git diff --name-only "${BASE}" HEAD)
           CODIGO=$(echo "$ARQUIVOS" | grep -vE "$IGNORAR" || true)
           PLANO=$(echo "$ARQUIVOS" | grep -E "$PLANOS" || true)
-          EXCECAO=$(git log --format=%s "${BASE}..HEAD" | grep -i "excecao gate" || true)
+          # Subject e corpo: a skill recomenda a excecao no corpo da mensagem.
+          EXCECAO=$(git log --format='%s%n%b' "${BASE}..HEAD" | grep -i "excecao gate" || true)
 
           if [ -z "$CODIGO" ]; then
             echo "delta_codigo vazio: gate satisfeito."

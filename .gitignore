@@ -23,3 +23,4 @@ docs/06_glpi/retro-scans/*.json
 docs/06_glpi/retro-scans/*.md
 !docs/06_glpi/retro-scans/README.md
 _backups_local/
+tools/docs/site/

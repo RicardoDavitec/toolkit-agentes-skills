@@ -33,4 +33,4 @@ python3 scripts/install_glpi.py
 
 [PMF-Integracao_GLPI/pmf-dev-kit](https://gitness.franca.sp.gov.br/PMF-Integracao_GLPI/pmf-dev-kit)
 
-**Autor:** Dr. Ricardo David — [`AUTHORS.md`](../../AUTHORS.md) · Patrocínio: PMF — DTI · [MIT](../../LICENSE)
+**Autor:** Dr. Ricardo David — `AUTHORS.md` · Patrocínio: PMF — DTI · licença MIT (`LICENSE` na raiz)

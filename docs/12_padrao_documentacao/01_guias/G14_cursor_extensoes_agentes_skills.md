@@ -133,7 +133,7 @@ Os agentes e skills que já existiam (`glpi-escriba`, `documente-o-plano`, `comm
 
 ## 7. Instalação e integração
 
-1. `scripts/docs/instalar_docs.sh [diretório]` copia para o projeto `.vscode/`, a regra do Cursor, os agentes, as skills e os scripts de documentação, e cria as pastas vazias de `docs/`. Nunca sobrescreve arquivo existente.
+1. `scripts/docs/instalar_docs.sh [diretório]` copia para o projeto `.vscode/`, a regra do Cursor, os agentes, as skills, os scripts de documentação e o padrão `docs/12_padrao_documentacao/` (guias, modelos, exemplos), e cria as pastas vazias de `docs/`. Nunca sobrescreve arquivo existente.
 2. A chamada a esse script a partir de `bootstrap-into.sh` e `upgrade-into.sh` **ainda não foi feita**. Esses dois scripts existem no repositório, mas eu não os li. *(A confirmar.)*
 3. O `.github/workflows/ci.yml` já roda `lint_template.py` e `lint_docs.py`. O job de documentação só executa se `scripts/docs/lint_docs.py` existir.
 4. Antes de publicar uma nova versão do template: `python3 scripts/lint_template.py` e `python3 scripts/docs/lint_docs.py`.

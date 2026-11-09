@@ -24,7 +24,7 @@ via API REST (qualquer instancia) e fluxo de documentacao **F/S/P**
 - `scripts/`: `bootstrap-into.sh`, `upgrade-into.sh`, `install-glpi.sh`,
   `install_glpi.py`, `atualizar-kit` (+`.py`).
 - `docs/06_glpi/`: manual da integracao GLPI.
-- `docs/guia_agentes_skills_ptbr.md`: guia de uso em Portugues-BR.
+- `docs/11_ia/guia_agentes_skills_ptbr.md`: guia de uso em Portugues-BR.
 
 ## Precedencia (fonte unica)
 

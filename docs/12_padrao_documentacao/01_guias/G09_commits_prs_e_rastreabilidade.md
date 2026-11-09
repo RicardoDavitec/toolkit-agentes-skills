@@ -29,7 +29,9 @@ Exemplos:
 🐛 fix(backend): corrige upsert de cache_05-10-26_15-00
 ✅ test(backend): cobertura da fila offline F3.S1.P2_05-10-26_16-20
 🚀 deploy(infra): homologacao F4.S1 em suporte-homolog_05-10-26_17-00
-📝 docs(docs): ajusta glossario, excecao gate: sem plano vigente_10-11-26_09-00
+📝 docs(docs): ajusta glossario_10-11-26_09-00
+
+excecao gate: sem plano vigente
 ```
 
 Onde:

@@ -1,6 +1,6 @@
 # Documentação
 
-Doze pastas, índice com underscore: `NN_nome`.
+treze pastas, índice com underscore: `NN_nome`.
 
 | # | Pasta | Uso |
 |---|-------|-----|
@@ -15,7 +15,9 @@ Doze pastas, índice com underscore: `NN_nome`.
 | 08 | `08_imagens` | Figuras e diagramas |
 | 09 | `09_dados_e_tabelas` | Dados de referência |
 | 10 | `10_setup` | Ambiente local e primeiros passos |
-| 11 | `11_ia` | Orientação para agentes |
+| 11 | `11_ia` | Orientação para agentes (inclui guia_agentes_skills_ptbr.md) |
+| 12 |`12_padrao_documentacao` |Padrão de documentação: guias, modelos e exemplos |
+
 
 ## 05_progresso
 

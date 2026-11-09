@@ -1,3 +1,13 @@
+---
+id: GUI-004
+tipo: guia
+titulo: Fase F1 – Planejamento
+status: rascunho
+versao: 0.1.0
+data: 2026-11-09
+autor: Ricardo
+classificacao: publico
+---
 
 ### `01_guias/G04_fase_f1_planejamento.md`
 

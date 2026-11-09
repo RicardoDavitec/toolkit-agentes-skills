@@ -62,6 +62,7 @@ SECOES = {
 RE_PASTA_RAIZ = re.compile(r"^\d{2}_[a-z0-9_]+$")
 RE_PASTA = re.compile(r"^[a-z0-9_]+$")
 RE_ARQUIVO = re.compile(r"^[a-z0-9_]+\.md$")
+RE_ARQUIVO_GUIA = re.compile(r"^G\d{2}_[a-z0-9_]+\.md$")
 RE_ID = re.compile(r"^[A-Z]{2,5}-[A-Za-z0-9._-]+$")
 RE_CHAVE = re.compile(r"^([a-z_]+):\s*(.*)$")
 RE_CODIGO = re.compile(r"^F[1-5](\.S\d+(\.P\d+)?)?$")
@@ -113,7 +114,10 @@ def main() -> int:
             (erros if estrito else avisos).append(f"{rel}: sem front matter")
             continue
 
-        if not RE_ARQUIVO.match(arq.name):
+        nome_ok = RE_ARQUIVO.match(arq.name) or (
+            fm.get("tipo") == "guia" and RE_ARQUIVO_GUIA.match(arq.name)
+        )
+        if not nome_ok:
             avisos.append(f"{rel}: nome de arquivo deve ser snake_case minusculo sem acento")
 
         for chave in OBRIGATORIOS:

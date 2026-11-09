@@ -19,7 +19,7 @@ commit permitido  <=>  (delta_codigo vazio)  OU  (delta_plano nao vazio)  OU  (e
 Onde:
 - `delta_codigo`: arquivos de código incluídos no commit (`git diff --cached --name-only`).
 - `delta_plano`: arquivos de plano incluídos no mesmo commit (plano vigente e anexos).
-- `excecao documentada`: tipografia/lockfile, **ou** `planos_ativos/` sem vigente (registrar na mensagem).
+- `excecao documentada`: uma das exceções da seção 5 (tipografia/lockfile, sem plano vigente, etc.), registrada na mensagem ou no status.
 - `<=>`: "se e somente se".
 
 Em palavras: quem muda código precisa mudar o plano **no mesmo commit**, salvo exceção documentada. Se a mensagem cita um code, o plano deve mostrar o mesmo status.
@@ -112,6 +112,7 @@ Não há rodapé `Refs:` nem `Req:`. A rastreabilidade vem do code na descriçã
 - Arquivo de dependências travadas (lockfile) ou arquivo gerado, sem mudança funcional. O plano só entra se o P for de dependências ou infraestrutura.
 - **Sem plano vigente** em `planos_ativos/` (template/kit): não inventar plano; registrar na mensagem (`excecao gate: sem plano vigente`).
 - Segredos e `.env`: **nunca** commitar. Planos não contêm senha, token ou dado sensível.
+
 
 ## 6. Depois do commit
 

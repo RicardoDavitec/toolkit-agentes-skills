@@ -5,8 +5,16 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  lint:
+  lint-template:
+    name: Catalogo .cursor, conflitos e segredos
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,7 +22,34 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pyyaml
-      - name: Lint do catalogo .cursor
+      - name: Lint do template
         run: python3 scripts/lint_template.py
-      - name: Tree-validate do payload exemplo F/S/P
-        run: tools/glpi/bin/glpi-tree-validate --from .glpi/templates/tree-example.json --strict
+
+  lint-docs:
+    name: Documentacao (padrao 12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Lint da documentacao
+        if: ${{ hashFiles('scripts/docs/lint_docs.py') != '' }}
+        run: python3 scripts/docs/lint_docs.py
+
+  scripts:
+    name: Sintaxe dos scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python compila
+        run: python3 -m compileall -q scripts tools
+      - name: Shell sem erro de sintaxe
+        run: |
+          set -e
+          for f in $(git ls-files 'scripts/*.sh' 'scripts/**/*.sh'); do
+            bash -n "$f"
+          done

@@ -1,0 +1,14 @@
+{
+    "files.encoding": "utf8",
+    "files.eol": "\n",
+    "markdown.extension.toc.levels": "2..4",
+    "[markdown]": {
+      "editor.wordWrap": "on",
+      "editor.formatOnSave": false
+    },
+    "cSpell.language": "en,pt-BR",
+    "yaml.schemas": {},
+    "git.inputValidation": true
+  }
+
+  

@@ -1,0 +1,22 @@
+---
+description: Padrao de documentacao do projeto (C, R, F, S, P)
+globs: docs/**/*.md
+alwaysApply: false
+---
+
+# Padrao de documentacao
+
+- Hierarquia: C e R so no cabecalho; itens usam `F#.S#.P#`. Um R e um projeto.
+- Planos, anexos e `SESSAO_*` seguem as skills `documente-o-plano` e `encerrar-sessao`.
+- Documento novo de apoio: skill `doc-novo`, com front matter (guia G03).
+- Commit: skill `commit` (gitmoji, descricao sem acentos, gate de plano).
+- Nunca inventar RN, `real_*`, resultado de teste ou numero de commit.
+- Sem segredo e sem dado pessoal real em documentos.
+
+| Fase ou tarefa | Agente |
+|---|---|
+| F1: requisitos, arquitetura, ADR | `doc-arquiteto` |
+| Qualquer fase: banco, ER, LGPD | `doc-dados-lgpd` |
+| F3 e F4: testes, homologacao, revisao, gate | `doc-revisor` |
+| Plano, commit, sessao, pendencia | `glpi-escriba` |
+

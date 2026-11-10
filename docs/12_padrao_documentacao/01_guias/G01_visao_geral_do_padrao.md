@@ -8,7 +8,6 @@ data: 2026-11-09
 autor: Ricardo
 classificacao: publico
 ---
-
 # G01 – Visão geral do padrão
 
 ## 1. Propósito

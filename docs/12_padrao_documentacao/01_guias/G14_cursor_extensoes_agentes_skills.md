@@ -8,7 +8,6 @@ data: 2026-11-10
 autor: Ricardo
 classificacao: publico
 ---
-
 # G14 – Cursor, extensões, agentes e skills
 
 ## 1. Extensões recomendadas
@@ -61,13 +60,14 @@ O Cursor usa o registro **Open VSX**. Algumas extensões podem faltar ou estar e
 | Modelos de documento | `docs/12_padrao_documentacao/02_modelos/` | Mantenedor do kit |
 | Pipeline de CI | `.github/workflows/ci.yml` | Mantenedor do kit |
 
-Agentes de documentação gravam **somente em `docs/`**, como o `glpi-escriba`.
+Agentes de documentação gravam **somente em** `docs/`, como o `glpi-escriba`.
 
 ## 4. Regras que os lints cobram
 
 ### 4.1 `scripts/lint_template.py` (catálogo do kit)
 
 **Skill** (`.cursor/skills/<nome>/SKILL.md`):
+
 - Front matter YAML válido, com `name` e `description`.
 - `name` **igual** ao nome da pasta.
 - `description` com traços de português (palavras como "de", "para", "com", "plano", "use", "quando", "em").
@@ -77,6 +77,7 @@ Agentes de documentação gravam **somente em `docs/`**, como o `glpi-escriba`.
 **Geral:** nenhum marcador de conflito git e nenhum segredo com aparência real.
 
 Duas armadilhas:
+
 - Uma linha com exatamente `=======` conta como conflito git. Em Markdown, use `#` para títulos e nunca sublinhado com `=`.
 - Texto como `api_key: <20 ou mais caracteres>` é bloqueado fora de `docs/06_glpi/` e de arquivos `.example`. Em documentos, escreva `<TOKEN>`.
 
@@ -116,6 +117,8 @@ description: >-
 | `doc-rastreabilidade` | Gera a matriz requisito, tarefa, commit, teste |
 | `doc-gate-fase` | Confere o critério de saída e emite o relatório de fase |
 | `doc-lint` | Roda os lints e resume os achados |
+| `atualizar-kit` | Sincroniza o kit no produto (procedimento A, G15) |
+| `documente-o-plano` / `documentar` | Plano F/S/P e atualização de docs (procedimento B, G15) |
 
 ### 6.3 Quem usa o quê (regra `.cursor/rules/documentacao.mdc`)
 
@@ -128,8 +131,7 @@ description: >-
 
 Os agentes e skills que já existiam (`glpi-escriba`, `documente-o-plano`, `commit`, `encerrar-sessao`, `inserir-pendencia`) **não** são duplicados. Os novos os chamam.
 
-> O agente `glpi-orquestrador` coordena a cadeia de sincronização com o GLPI (harvest, validate, phase-ensure, upsert, rollup e followup, em dry-run, com confirmação `APLICAR`). Ele **não** distribui trabalho entre os agentes `doc-*`. Guia geral de uso: `docs/11_ia/guia_agentes_skills_ptbr.md`.
-
+> O agente `glpi-orquestrador` coordena a cadeia de sincronização com o GLPI (harvest, validate, phase-ensure, upsert, rollup e followup, em dry-run, com confirmação `APLICAR`). Ele **não** distribui trabalho entre os agentes `doc-`*. Guia geral de uso: `docs/11_ia/guia_agentes_skills_ptbr.md`.
 
 ## 7. Instalação e integração
 

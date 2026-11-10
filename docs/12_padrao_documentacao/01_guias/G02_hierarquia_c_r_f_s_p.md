@@ -8,7 +8,6 @@ data: 2026-11-09
 autor: Ricardo
 classificacao: publico
 ---
-
 # G02 – Hierarquia C / R / F / S / P
 
 Este guia resume `docs/06_glpi/HIERARQUIA_F_S_P_GLPI.md`, que é a fonte canônica. Em caso de divergência, vale aquele arquivo.
@@ -76,7 +75,6 @@ Consequências:
 - O cabeçalho de um plano cita **um** C e **um** R.
 - Documentos comuns a vários R do mesmo produto (por exemplo, o glossário) ficam sem R no cabeçalho.
 - Para o GLPI, C e R vão por id (`tickets_id`, `projects_id`), nunca no texto dos itens.
-
 
 ## 6. Como citar nos documentos
 

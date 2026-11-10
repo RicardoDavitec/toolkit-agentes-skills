@@ -195,12 +195,20 @@ def pull_kit(kit: Path) -> tuple[bool, str]:
 
 
 def run_upgrade(kit: Path, target: Path, profile: str) -> int:
+    """Aplica upgrade-into.sh e, no perfil full-skeleton, garante instalar_docs.
+
+    upgrade-into.sh nao aceita --profile (isso e do bootstrap). Usa --target/--apply/--yes.
+    O perfil so influencia se rodamos instalar_docs de novo apos o upgrade
+    (full-skeleton / pmf-core: sim; glpi-only: nao — o proprio upgrade ja chama
+    instalar_docs no fim quando --apply).
+    """
     script = kit / "scripts" / "upgrade-into.sh"
     if not script.is_file():
         print(f"erro: nao encontrado {script}", file=sys.stderr)
         return 1
-    print(f"→ upgrade-into.sh {target} --profile={profile}", file=sys.stderr)
-    p = run([str(script), str(target), f"--profile={profile}"], capture=False)
+    cmd = [str(script), f"--target={target}", "--apply", "--yes"]
+    print(f"→ {' '.join(cmd)}  (perfil inferido/flag: {profile})", file=sys.stderr)
+    p = run(cmd, capture=False)
     return p.returncode
 
 

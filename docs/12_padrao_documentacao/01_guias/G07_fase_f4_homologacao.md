@@ -8,7 +8,6 @@ data: 2026-11-09
 autor: Ricardo
 classificacao: publico
 ---
-
 # G07 – Fase F4: Homologação
 
 **Objetivo:** validar o sistema com o usuário final, em ambiente de homologação.

@@ -32,6 +32,7 @@ As pastas `00_` a `11_` dizem **onde** cada documento mora. Esta pasta diz **com
 | G12 | LGPD e classificação | F1 a F5 |
 | G13 | Diagramas como código | Todas |
 | G14 | Cursor, extensões, agentes e skills | Todas |
+| G15 | Atualizar o template e documentar | Todas |
 
 ## Subpastas
 

@@ -8,7 +8,6 @@ data: 2026-11-09
 autor: Ricardo
 classificacao: publico
 ---
-
 # G03 – Nomenclatura e front matter
 
 ## 1. Regras de nome
@@ -56,7 +55,7 @@ Planos, anexos, `SESSAO_*` e pendências **não** têm tipo aqui: seguem as skil
 
 ## 3. Front matter
 
-````yaml
+```yaml
 ---
 id: ADR-001
 tipo: adr
@@ -70,3 +69,4 @@ data: 2026-11-09
 autor: Nome
 classificacao: interno
 ---
+```

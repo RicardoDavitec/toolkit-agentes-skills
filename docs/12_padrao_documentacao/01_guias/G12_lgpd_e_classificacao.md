@@ -8,7 +8,6 @@ data: 2026-11-09
 autor: Ricardo
 classificacao: publico
 ---
-
 # G12 – LGPD e classificação
 
 > Este guia orienta a prática do projeto. Não substitui parecer jurídico nem a orientação do encarregado (DPO, Data Protection Officer) do órgão.

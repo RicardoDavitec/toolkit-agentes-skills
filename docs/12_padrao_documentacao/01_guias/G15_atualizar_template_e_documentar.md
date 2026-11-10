@@ -3,7 +3,7 @@ id: GUI-015
 tipo: guia
 titulo: Atualizar o template e documentar no projeto
 status: rascunho
-versao: 0.1.0
+versao: 0.2.0
 data: 2026-11-10
 autor: Ricardo
 classificacao: publico
@@ -11,7 +11,7 @@ classificacao: publico
 
 # G15 – Atualizar o template e documentar no projeto
 
-Dois procedimentos recorrentes em qualquer produto baseado neste kit. Skills: `atualizar-kit`, `documente-o-plano`, `documentar`, `doc-novo`, `doc-lint`, `commit`.
+Dois procedimentos recorrentes em qualquer produto baseado neste kit. Skills: `atualizar-kit`, `documente-o-plano`, `documentar`, `doc-novo`, `doc-lint`, `commit`, `sincronize`.
 
 ## Procedimento A — Atualizar o template (kit → produto)
 
@@ -19,29 +19,43 @@ Dois procedimentos recorrentes em qualquer produto baseado neste kit. Skills: `a
 
 Há commits novos em `toolkit-agentes-skills`, ou o produto ainda não tem `docs/12_padrao_documentacao/`, skills `doc-*` ou scripts em `scripts/docs/`.
 
+### Pré-requisito: branches atualizadas
+
+Antes de copiar arquivos, `atualizar_kit.py` faz `git fetch` no **kit** e no **destino** (`origin`; também `github`/`gitness` se existirem) e **recusa** o apply se alguma branch estiver atrasada.
+
+| Situação | Ação |
+|---|---|
+| Destino atrasado do remoto | Skill `sincronize` ou `git pull --ff-only` no produto; depois repetir |
+| Kit atrasado de `origin` | `git pull --ff-only` no kit, ou `--pull-kit` (working tree limpa) |
+| Destino só à frente do remoto | OK aplicar; depois `commit` + `sincronize`/push |
+| Working tree suja | Aviso; upgrade segue — separe commits (kit vs WIP) |
+| Emergência | `--allow-behind` (não use no fluxo normal) |
+
 ### Passos
 
 1. No produto, confira o caminho do kit em `.glpi/kit.yaml` (`path:`).
-2. Dry-run / check:
+2. Dry-run / check (mostra behind/ahead de kit e destino):
    ```bash
    ./scripts/atualizar-kit --check-only
    # equivalente a partir do clone do kit:
    python3 /caminho/toolkit-agentes-skills/scripts/atualizar_kit.py \
      --target=/caminho/produto --check-only
    ```
-3. Aplicar (perfil `full-skeleton` se já existir `docs/00_visao_geral`):
+3. Se o check acusar destino/kit atrasados: equalize primeiro (skill `sincronize`).
+4. Aplicar (perfil `full-skeleton` se já existir `docs/00_visao_geral`):
    ```bash
    ./scripts/atualizar-kit --profile=full-skeleton --yes
    ```
    Por baixo: `upgrade-into.sh --target=... --apply --yes` e, no fim, `scripts/docs/instalar_docs.sh` (`cp -n`, não sobrescreve docs do produto).
-4. Atalho só do padrão 12 (sem sync GLPI completo):
+5. Atalho só do padrão 12 (sem sync GLPI completo):
    ```bash
    bash /caminho/toolkit-agentes-skills/scripts/docs/instalar_docs.sh /caminho/produto
    # ou, no kit:
    ./scripts/procedimento_atualizar_template.sh --target=/caminho/produto --docs-only
    ```
-5. Revisar `git status` no produto. Não commit automático. Commit com a skill `commit` (sem `.keys/`, `.env`, credenciais).
-6. Lint: `python3 scripts/docs/lint_docs.py` (0 erros).
+6. Revisar `git status` no produto. Não commit automático. Commit com a skill `commit` (sem `.keys/`, `.env`, credenciais).
+7. Equalizar remotos do produto com skill `sincronize` (origin; e github/gitness se existirem).
+8. Lint: `python3 scripts/docs/lint_docs.py` (0 erros).
 
 ### Regras
 

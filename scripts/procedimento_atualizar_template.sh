@@ -4,6 +4,9 @@
 #   ./scripts/procedimento_atualizar_template.sh --target=/caminho/produto [--check-only]
 #   ./scripts/procedimento_atualizar_template.sh --target=/caminho/produto --yes
 #   ./scripts/procedimento_atualizar_template.sh --target=/caminho/produto --docs-only
+#   ./scripts/procedimento_atualizar_template.sh --target=... --yes --pull-kit
+#   ./scripts/procedimento_atualizar_template.sh --target=... --yes --allow-behind
+# Sempre verifica se kit e destino estao atualizados vs remotos antes do apply (G15).
 set -euo pipefail
 
 KIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -11,10 +14,12 @@ TARGET=""
 CHECK_ONLY=0
 YES=0
 DOCS_ONLY=0
+PULL_KIT=0
+ALLOW_BEHIND=0
 PROFILE="full-skeleton"
 
 usage() {
-  sed -n '2,7p' "$0" | sed 's/^# //'
+  sed -n '2,9p' "$0" | sed 's/^# //'
   exit "${1:-0}"
 }
 
@@ -25,6 +30,8 @@ for arg in "$@"; do
     --check-only) CHECK_ONLY=1 ;;
     --yes|-y) YES=1 ;;
     --docs-only) DOCS_ONLY=1 ;;
+    --pull-kit) PULL_KIT=1 ;;
+    --allow-behind) ALLOW_BEHIND=1 ;;
     --profile=*) PROFILE="${arg#*=}" ;;
     *) echo "Parametro desconhecido: $arg" >&2; usage 2 ;;
   esac
@@ -51,5 +58,7 @@ else
   echo "Informe --check-only ou --yes (apply). Veja G15." >&2
   exit 2
 fi
+[[ "$PULL_KIT" == "1" ]] && ARGS+=(--pull-kit)
+[[ "$ALLOW_BEHIND" == "1" ]] && ARGS+=(--allow-behind)
 
 exec python3 "$KIT_ROOT/scripts/atualizar_kit.py" "${ARGS[@]}"

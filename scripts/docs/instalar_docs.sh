@@ -20,7 +20,8 @@ for f in \
   .cursor/agents/doc-arquiteto.md .cursor/agents/doc-dados-lgpd.md .cursor/agents/doc-revisor.md \
   scripts/docs/lint_docs.py scripts/docs/novo_doc.py scripts/docs/gerar_rastreabilidade.py \
   scripts/docs/gerar_dados_prisma.sh scripts/docs/instalar_docs.sh \
-  scripts/docs/procedimento_documentar.sh scripts/procedimento_atualizar_template.sh; do
+  scripts/docs/procedimento_documentar.sh scripts/procedimento_atualizar_template.sh \
+  scripts/lint_template.py; do
   copiar "$f"
 done
 

@@ -3,6 +3,9 @@
 **Versao:** [`v1.0.0`](CHANGELOG.md) (14/10/2026). Fonte unica de inicializacao.
 O `API-VScode-GLPI` permanece como historico.
 
+Repositorio mestre: https://github.com/RicardoDavitec/toolkit-agentes-skills (`origin`).
+Espelho municipal: https://gitness.franca.sp.gov.br/PMF-Integracao_GLPI/toolkit-agentes-skills (`gitness`). Branch: `main`.
+
 Kit reutilizavel de **agentes e skills para Cursor**, com integracao **GLPI**
 via API REST (qualquer instancia) e fluxo de documentacao **F/S/P**
 (Fase / Sessao-Sprint / Tarefa ancorada em commit). Unifica o antigo

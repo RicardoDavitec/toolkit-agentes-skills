@@ -76,7 +76,7 @@ Todos escrevem **somente em `docs/`**. Não alteram planos (isso é do `glpi-esc
 
 | Grupo | Skills |
 |-------|--------|
-| Git/remoto | `commit`, `exporte` (push), `importe` (pull), `atualizar` (sincronizar 1 remote), `sincronize` (equalizar origin+github) |
+| Git/remoto | `commit`, `exporte` (push), `importe` (pull), `atualizar` (sincronizar 1 remote), `sincronize` (equalizar origin e espelhos `github`/`gitness`, se existirem) |
 | Sessão/planos | `documentar`, `documente-o-plano`, `encerrar-sessao`, `oncoto-oncovo`, `planeje-a-semana`, `inserir-pendencia` |
 | Documentação (padrão 12) | `doc-novo`, `doc-adr`, `doc-dados-schema`, `doc-lgpd-inventario`, `doc-rastreabilidade`, `doc-gate-fase`, `doc-lint` |
 | Backup/kit | `backup`, `atualizar-kit` |

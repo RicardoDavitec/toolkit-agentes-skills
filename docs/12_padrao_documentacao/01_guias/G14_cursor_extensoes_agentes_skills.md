@@ -3,7 +3,7 @@ id: GUI-014
 tipo: guia
 titulo: Cursor, extensões, agentes e skills
 status: rascunho
-versao: 0.3.0
+versao: 0.3.1
 data: 2026-11-10
 autor: Ricardo
 classificacao: publico
@@ -35,6 +35,23 @@ Arquivo `.vscode/extensions.json`:
 Opcionais: `jebbs.plantuml` (exige Java e Graphviz) e `hediet.vscode-drawio`.
 
 O Cursor usa o registro **Open VSX**. Algumas extensões podem faltar ou estar em versão antiga; confira ao instalar.
+
+### Mermaid — nome na loja ≠ ID
+
+| ID (extensions.json) | Nome na loja / busca | Autor |
+|---|---|---|
+| `bierner.markdown-mermaid` | **Markdown Preview Mermaid Support** (busque `Markdown Preview Mermaid`) | Matt Bierner |
+
+Não confundir com: *Markdown Preview Mermaid Enhanced*, *Markdown Preview Enhanced*, *Mermaid* genérico ou *Mermaid Markdown Syntax Highlighting* (só highlight).
+
+Instalação rápida: `Ctrl+P` → `ext install bierner.markdown-mermaid`.
+
+No Cursor há **dois** previews:
+
+1. Aba Preview nativa do Cursor — Mermaid limitado; extensões **não** alteram essa aba.
+2. Preview clássico VS Code — use `Markdown: Open Preview to the Side` (`Ctrl+K` `V`) com a extensão Bierner.
+
+A extensão Bierner aparece como *deprecated* no Marketplace (foi embutida no VS Code 1.121); no Cursor ainda é a opção correta via Open VSX.
 
 ## 2. Configurações (`.vscode/settings.json`)
 

@@ -1,0 +1,75 @@
+kind: pipeline
+spec:
+  stages:
+  - name: lint-template
+    spec:
+      clone: {}
+      platform:
+        arch: amd64
+        os: linux
+      runtime:
+        spec: {}
+        type: cloud
+      steps:
+      - spec:
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+        type: action
+      - spec:
+          run: pip install pyyaml
+        type: script
+      - name: Lint do template
+        spec:
+          run: python3 scripts/lint_template.py
+        type: script
+    type: ci
+  - name: lint-docs
+    spec:
+      clone: {}
+      platform:
+        arch: amd64
+        os: linux
+      runtime:
+        spec: {}
+        type: cloud
+      steps:
+      - spec:
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+        type: action
+      - name: Lint da documentacao
+        spec:
+          run: python3 scripts/docs/lint_docs.py
+        type: script
+    type: ci
+  - name: scripts
+    spec:
+      clone: {}
+      platform:
+        arch: amd64
+        os: linux
+      runtime:
+        spec: {}
+        type: cloud
+      steps:
+      - spec:
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+        type: action
+      - name: Python compila
+        spec:
+          run: python3 -m compileall -q scripts tools
+        type: script
+      - name: Shell sem erro de sintaxe
+        spec:
+          run: |
+            set -e
+            for f in $(git ls-files 'scripts/*.sh' 'scripts/**/*.sh'); do
+              bash -n "$f"
+            done
+        type: script
+    type: ci
+version: 1

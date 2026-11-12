@@ -1,0 +1,32 @@
+kind: pipeline
+spec:
+  stages:
+  - name: lint-docs
+    spec:
+      clone: {}
+      platform:
+        arch: amd64
+        os: linux
+      runtime:
+        spec: {}
+        type: cloud
+      steps:
+      - spec:
+          uses: actions/setup-python@v5
+          with:
+            python-version: "3.12"
+        type: action
+      - name: Validar documentos
+        spec:
+          run: python scripts/docs/lint_docs.py
+        type: script
+      - name: Instalar MkDocs
+        spec:
+          run: pip install mkdocs-material
+        type: script
+      - name: Construir portal
+        spec:
+          run: mkdocs build -f tools/docs/mkdocs.yml --strict
+        type: script
+    type: ci
+version: 1

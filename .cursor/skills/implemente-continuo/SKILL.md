@@ -2,7 +2,8 @@
 name: implemente-continuo
 description: >-
   Executa o plano vigente em sequencia, com retorno de andamento minimo,
-  commit ao fim de cada tarefa P, sessao e teste ao fim de cada S, e push
+  commit ao fim de cada tarefa P, com o checklist dos planos ativos
+  preenchido e atualizado, sessao e teste ao fim de cada S, e push
   no fechamento. No fim do plano, sugere implementar as pendencias
   registradas nesse ciclo. Use quando o usuario pedir implemente o plano no
   modelo continuo, implemente continuamente, modo continuo, ou esta skill pelo nome.
@@ -18,6 +19,7 @@ Executa o plano vigente em `docs/05_progresso/planos_ativos/` (índice `README.m
 Crie a SKILL  "Implemente o plano no modelo contínuo" Seguindo o procedimento a seguir:
 1. Implemente continuamente  o planejamentocom com retorno de andamento mínimo.
 2. Commit a o final de cada tarefa "P";
+2.1. Ao final da implementação de cada "P", preencher e atualizar os checklists dos planos ativos em implementação.
 3. Encerre a sessão e commita ao final de cada Sessão "S"
 3.1. Verifique a necessidade de teste ao final de cada "S", considerando a necessidade ou não de build e reinicalização de ambientes.
 3.1.1. Se possivel teste em dryrun, em background;
@@ -41,7 +43,7 @@ Crie a SKILL  "Implemente o plano no modelo contínuo" Seguindo o procedimento a
 1. Marcar `[~]` com `real_start` (agora). Implementar só o critério daquele P.
 2. Falha dentro do critério: corrigir no mesmo P.
 3. Necessidade fora do critério: skill `inserir-pendencia`, salvo pré-requisito para continuar. Pré-requisito: corrigir na hora ou inserir um P novo no plano vigente, na posição que destrava o restante com menos retrabalho. Registrar a escolha na linha de andamento.
-4. Plano: P `[x]`, `real_end`. A S pai fica `[~]` até o último P.
+4. Ao final da implementação do P: preencher e atualizar os checklists dos planos ativos em implementação (`docs/05_progresso/planos_ativos/`, índice `README.md`, e o anexo da S quando o P o alterar). Marcar o P `[x]`, `%` 100 e `fim_real` / `real_end`. A S pai fica `[~]` até o último P. Esse delta do plano entra no commit do P.
 5. Skill `commit`: um commit por P, mensagem cita o código. Sem push no meio da S.
 
 ## Fechamento de cada S
@@ -74,7 +76,7 @@ Depois da última S (3.4):
 | Skill | Quando |
 |-------|--------|
 | `implemente` | O mesmo plano, com parada e relato entre tarefas |
-| `commit` | Fim de cada P, fim de cada S, fim do plano |
+| `commit` | Fim de cada P (checklist dos planos ativos já atualizado), fim de cada S, fim do plano |
 | `encerrar-sessao` | Fim de cada S e fim do plano |
 | `inserir-pendencia` | Correção que não é pré-requisito; no fim do plano, sugerir implementar as abertas deste ciclo |
 | `documentar` / `registrar-tentativa` | Testes e falhas do fechamento da S |

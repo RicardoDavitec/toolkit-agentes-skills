@@ -3,8 +3,9 @@ name: implemente-continuo
 description: >-
   Executa o plano vigente em sequencia, com retorno de andamento minimo,
   commit ao fim de cada tarefa P, sessao e teste ao fim de cada S, e push
-  no fechamento. Use quando o usuario pedir implemente o plano no modelo
-  continuo, implemente continuamente, modo continuo, ou esta skill pelo nome.
+  no fechamento. No fim do plano, sugere implementar as pendencias
+  registradas nesse ciclo. Use quando o usuario pedir implemente o plano no
+  modelo continuo, implemente continuamente, modo continuo, ou esta skill pelo nome.
 argument-hint: "Codigo inicial opcional (ex: F1.S1.P7). Vazio = primeiro P aberto do plano vigente."
 ---
 
@@ -26,6 +27,7 @@ Crie a SKILL  "Implemente o plano no modelo contínuo" Seguindo o procedimento a
 3.2. Se surgirem necessidades de alterações, correções e criação de novos códigos, incerir como item na lista vigente de pendências, execeto se a alteração seja necessária como pré requisito para continuar a implementação. Nesse caso consirede alteração imediata ou inserção de novo item no plano de ação vigente, estratégicamente colocado para maximizar a eficiência da implementação.
 3.3. documente os trestes e correções, commit e push.
 3.4. Ao final da implementação geral, depois do último "S" , apresente e documente resumo da implementação encerre a sessão, commit e push.
+3.5. Ao final, depois do resumo, sessão, commit e push, sugerir a implementação das pendências registradas ao longo do processo na lista vigente de pendências. Não iniciá-las antes do aceite.
 
 ## Leitura operacional
 
@@ -60,7 +62,12 @@ Quando todos os P da S estiverem `[x]`:
 
 ## Fim do plano
 
-Depois da última S (3.4): resumo da implementação em `docs/05_progresso/geral/`, skill `encerrar-sessao`, skill `commit`, skill `sincronize`.
+Depois da última S (3.4):
+
+1. Resumo da implementação em `docs/05_progresso/geral/`.
+2. Skill `encerrar-sessao`.
+3. Skill `commit`. Skill `sincronize`.
+4. Pendências deste ciclo (3.5): ler `docs/05_progresso/pendencias/CHECKLIST_PENDENCIAS.md` e listar só os itens ainda abertos (`[ ]` ou `[~]`) inseridos durante esta implementação (skill `inserir-pendencia`). Sugerir implementá-los em seguida, na ordem do checklist, com o id `PEND-…` e uma linha do que cada um pede. Se não houver item aberto deste ciclo, dizer isso. Não começar essa implementação: a sugestão encerra o plano; a execução só começa com o aceite.
 
 ## Relação com outras skills
 
@@ -69,7 +76,7 @@ Depois da última S (3.4): resumo da implementação em `docs/05_progresso/geral
 | `implemente` | O mesmo plano, com parada e relato entre tarefas |
 | `commit` | Fim de cada P, fim de cada S, fim do plano |
 | `encerrar-sessao` | Fim de cada S e fim do plano |
-| `inserir-pendencia` | Correção que não é pré-requisito |
+| `inserir-pendencia` | Correção que não é pré-requisito; no fim do plano, sugerir implementar as abertas deste ciclo |
 | `documentar` / `registrar-tentativa` | Testes e falhas do fechamento da S |
 | `build-mobile` / `empacotar-apk` | APK no fechamento da S |
 | `deploy-backend` | Pull, build e up no servidor, depois do push |

@@ -53,13 +53,47 @@ def validar(itens: list[dict], raiz: Path | None = None) -> list[str]:
     return erros_regex(itens) + erros_duplicidade(itens) + erros_caminho(itens, base)
 
 
+def ler_itens(texto: str) -> tuple[list[dict] | None, list[str]]:
+    try:
+        dados = json.loads(texto)
+    except json.JSONDecodeError:
+        return None, ["formato do registro: JSON invalido"]
+    if not isinstance(dados, dict) or not isinstance(dados.get("itens"), list):
+        return None, ["formato do registro: falta a lista itens"]
+    erros: list[str] = []
+    itens: list[dict] = []
+    for indice, item in enumerate(dados["itens"], 1):
+        if not isinstance(item, dict):
+            erros.append(f"formato do registro: item {indice} nao e objeto")
+            continue
+        if not isinstance(item.get("codigo"), str) or item.get("codigo") == "":
+            erros.append(f"formato do registro: item {indice} sem codigo")
+        if not isinstance(item.get("caminho"), str) or item.get("caminho") == "":
+            erros.append(f"formato do registro: item {indice} sem caminho")
+        if "aposentado" in item and not isinstance(item["aposentado"], bool):
+            erros.append(
+                f"formato do registro: item {indice} aposentado deve ser booleano"
+            )
+        if "descricao" in item and not isinstance(item["descricao"], str):
+            erros.append(f"formato do registro: item {indice} descricao deve ser texto")
+        itens.append(item)
+    if erros:
+        return None, erros
+    return itens, []
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Valida registro-codigos.json.")
     parser.add_argument("registro", help="Caminho do registro JSON")
     parser.add_argument("--raiz", default=".", help="Raiz dos caminhos do registro")
     args = parser.parse_args(argv)
-    dados = json.loads(Path(args.registro).read_text(encoding="utf-8"))
-    erros = validar(dados["itens"], Path(args.raiz))
+    caminho = Path(args.registro)
+    if not caminho.is_file():
+        print("formato do registro: arquivo inexistente", file=sys.stderr)
+        return 1
+    itens, erros = ler_itens(caminho.read_text(encoding="utf-8"))
+    if itens is not None:
+        erros.extend(validar(itens, Path(args.raiz)))
     for erro in erros:
         print(erro, file=sys.stderr)
     return 1 if erros else 0

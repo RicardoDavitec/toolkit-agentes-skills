@@ -4,7 +4,7 @@ tipo: teste
 titulo: Scripts de código de elemento
 codigo: F3.S1
 status: em_revisao
-versao: 0.3.0
+versao: 0.4.0
 data: 2026-11-27
 autor: Ricardo
 classificacao: publico
@@ -16,7 +16,7 @@ classificacao: publico
 Scripts em `scripts/manutencao/` no Linux (WSL) e no Windows (PowerShell, Python 3.14.4).
 
 ## Estratégia
-Teste unitário com `unittest` e teste de preservação em cópia descartável.
+Teste unitário com `unittest` e teste de preservação em cópia descartável. Os resultados do Linux e do Windows, inclusive formato, duplicidade e caminho, ficam nesta ficha.
 
 ## Casos de teste
 | ID | Requisito | Passos | Resultado esperado | Resultado obtido | Estado |

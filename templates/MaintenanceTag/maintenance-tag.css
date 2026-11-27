@@ -1,0 +1,25 @@
+.elemento {
+  position: relative;
+}
+
+.maint-tag {
+  display: none;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  font-size: 0.75rem;
+}
+
+body:has(#exibir-codigo-manutencao:checked) .maint-tag {
+  display: block;
+}
+
+@media print {
+  .maint-tag {
+    display: none;
+  }
+
+  body:has(#exibir-codigo-manutencao:checked) .maint-tag {
+    display: block;
+  }
+}

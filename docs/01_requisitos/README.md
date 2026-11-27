@@ -59,4 +59,6 @@ Glossario em rascunho: [glo_001_manutencao_por_codigo.md](glo_001_manutencao_por
 
 Padrao de identificacao em rascunho: [padrao-identificacao.md](padrao-identificacao.md).
 
+Politica de publicacao em rascunho: [politica_publicacao.md](politica_publicacao.md).
+
 Regras de negocio aceitas em 27/11/2026: RN-001 a RN-007, nos arquivos `rn_001` a `rn_007` desta pasta.

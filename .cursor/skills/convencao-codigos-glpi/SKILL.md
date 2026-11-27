@@ -91,6 +91,21 @@ O código é o do elemento, na forma do padrão de identificação. A descriçã
 
 O assunto do e-mail de notificação é o título do chamado. O código entra no assunto, no formato `[código] descrição curta`.
 
+## Categoria por tipo de elemento
+
+A categoria do chamado leva o nome do tipo. Skill, agente e script do kit usam a categoria do tipo `c`.
+
+| Letra | Tipo | Categoria |
+|---|---|---|
+| `p` | painel | Painel |
+| `q` | quadro | Quadro |
+| `j` | janela | Janela |
+| `m` | modal | Modal |
+| `e` | formulário | Formulário |
+| `c` | componente | Componente |
+
+O id da categoria fica no catálogo da instância. Este kit não grava esse id. Sem id no catálogo, o chamado segue sem categoria.
+
 ## Verificação
 
 ```bash

@@ -81,6 +81,12 @@ Estes formatos não são usados. O validador ignora este bloco.
 - Comentário: `<!-- glpi: code="C1.R1.F1.S1.P1" -->`
 - Arquivo: `C1_R1_F1_S1_levantamento.md`
 
+## Título do chamado de manutenção
+
+O título do chamado de manutenção é `[código] descrição curta`.
+
+O código é o do elemento, na forma do padrão de identificação. A descrição é curta e não repete o código.
+
 ## Verificação
 
 ```bash

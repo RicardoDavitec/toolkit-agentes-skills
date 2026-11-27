@@ -4,7 +4,7 @@ tipo: guia
 titulo: Padrão de identificação de elemento
 codigo: F1.S2.P1
 status: rascunho
-versao: 0.2.0
+versao: 0.3.0
 data: 2026-11-27
 autor: Ricardo
 classificacao: publico
@@ -46,3 +46,12 @@ O código fica no canto inferior esquerdo do elemento. O checkbox "Exibir códig
 
 ## Aposentadoria
 O código de um elemento aposentado permanece associado a esse elemento. Ele não é atribuído a outro. As mesmas letras e os mesmos dígitos não formam um código novo.
+
+## Artefatos do kit
+Skill, agente e script deste kit usam a letra `c`, a mesma do componente. A forma do código não muda. O trecho de duas a quatro letras distingue o artefato.
+
+| Código | Leitura |
+|---|---|
+| `cskil1` | skill do kit |
+| `cagte1` | agente do kit |
+| `cscr1` | script do kit |

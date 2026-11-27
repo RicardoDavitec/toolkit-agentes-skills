@@ -106,6 +106,22 @@ A categoria do chamado leva o nome do tipo. Skill, agente e script do kit usam a
 
 O id da categoria fica no catálogo da instância. Este kit não grava esse id. Sem id no catálogo, o chamado segue sem categoria.
 
+## Fase F6-MAN
+
+F6 é a fase de manutenção (MAN). F1 a F5 do projeto permanecem. F6 não substitui F5.
+
+| Código | Sessão |
+|---|---|
+| F6.S1 | Triagem |
+| F6.S2 | Corretiva |
+| F6.S3 | Adaptativa |
+| F6.S4 | Perfectiva |
+| F6.S5 | Preventiva |
+| F6.S6 | Codificação |
+| F6.S7 | Fechamento |
+
+F6.S1 lê o código no título e define a natureza. Das sessões F6.S2 a F6.S6, executa-se a natureza definida. As outras ficam dispensadas, com a justificativa registrada. F6.S7 grava o histórico citando o chamado. Dois responsáveis conferem o fechamento.
+
 ## Verificação
 
 ```bash

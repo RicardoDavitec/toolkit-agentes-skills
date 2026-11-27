@@ -30,4 +30,4 @@ python3 -m unittest discover -s scripts/manutencao/testes -v
 
 `varrer_codigos.py` lista `data-maint-id` em arquivos de texto. Não entra em `.git` nem segue link.
 
-`validar_registro.py` termina com código 1 quando há erro e escreve a mensagem na saída de erro. `gerar_tabela.py` só grava a tabela se o JSON do registro está bem formado.
+`varrer_codigos.py` termina com código 2 se a pasta não existe. `validar_registro.py` termina com código 1 quando há erro e escreve a mensagem na saída de erro. `gerar_tabela.py` só confere se o JSON está bem formado; a checagem de código, duplicidade e caminho fica com `validar_registro.py`, que deve passar antes de publicar a tabela.

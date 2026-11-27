@@ -20,9 +20,23 @@ def erros_regex(itens: list[dict]) -> list[str]:
     return erros
 
 
+def erros_duplicidade(itens: list[dict]) -> list[str]:
+    erros: list[str] = []
+    vistos: dict[str, int] = {}
+    for indice, item in enumerate(itens, 1):
+        codigo = item.get("codigo", "")
+        if not isinstance(codigo, str) or codigo == "":
+            continue
+        if codigo in vistos:
+            erros.append(f"codigo duplicado: {codigo}")
+        else:
+            vistos[codigo] = indice
+    return erros
+
+
 def validar(itens: list[dict], raiz: Path | None = None) -> list[str]:
     del raiz
-    return erros_regex(itens)
+    return erros_regex(itens) + erros_duplicidade(itens)
 
 
 def main(argv: list[str] | None = None) -> int:

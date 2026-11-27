@@ -17,4 +17,4 @@ description: >-
 
 ## Fronteira
 
-A preservação no `bootstrap-into.sh` e no `upgrade-into.sh` não entra nesta skill enquanto a decisão do equivalente Windows estiver aberta.
+No Windows, `upgrade-into.sh` roda no Git Bash ou no WSL. `bootstrap-into.sh` e `upgrade-into.sh` não sobrescrevem `.glpi/manutencao/`.

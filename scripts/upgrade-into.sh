@@ -125,6 +125,8 @@ readonly -a PRODUCT_OWNED=(
   "GLPI-tokens.txt"
   ".glpi/agenda.yaml"
   "docs/05_progresso/quadros_semanais/"
+  # Registro, escala e historico do produto
+  ".glpi/manutencao/"
 )
 
 # --- S : SEEDED --- criado apenas se ausente:  "destino<TAB>origem" ----------

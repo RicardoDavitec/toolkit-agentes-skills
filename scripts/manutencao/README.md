@@ -2,7 +2,7 @@
 
 Python 3, só biblioteca padrão. Funcionam em Linux e em Windows.
 
-O registro é um JSON do projeto, fora do template. Caminho sugerido: `.glpi/manutencao/registro-codigos.json`. A escala e o histórico do produto ficam na mesma pasta.
+O registro é um JSON do projeto, fora do template. Caminho sugerido: `.glpi/manutencao/registro-codigos.json`. A escala e o histórico do produto ficam na mesma pasta. `bootstrap-into.sh` e `upgrade-into.sh` não sobrescrevem `.glpi/manutencao/`. No Windows, `upgrade-into.sh` roda no Git Bash ou no WSL.
 
 ```json
 {

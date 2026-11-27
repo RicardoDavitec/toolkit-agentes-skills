@@ -40,6 +40,22 @@ class TesteGerar(unittest.TestCase):
             self.assertIn("`ppain1`", texto)
             self.assertIn("[painel.html](painel.html)", texto)
 
+    def test_registro_vazio_so_tem_cabecalho(self) -> None:
+        texto = gerar_tabela.gerar([])
+        self.assertIn("| Código | Caminho | Descrição | Aposentado |", texto)
+        self.assertNotIn("`ppain1`", texto)
+
+    def test_json_invalido_nao_grava_saida(self) -> None:
+        with tempfile.TemporaryDirectory() as pasta:
+            raiz = Path(pasta)
+            registro = raiz / "registro-codigos.json"
+            registro.write_text("{", encoding="utf-8")
+            saida = raiz / "tabela-mapeamento.md"
+            self.assertEqual(
+                gerar_tabela.main([str(registro), "--saida", str(saida)]), 1
+            )
+            self.assertFalse(saida.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

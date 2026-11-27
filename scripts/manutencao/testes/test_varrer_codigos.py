@@ -29,6 +29,33 @@ class TesteVarrer(unittest.TestCase):
     def test_pasta_inexistente(self) -> None:
         self.assertEqual(varrer_codigos.main(["/pasta/que/nao/existe"]), 2)
 
+    def test_ignora_git(self) -> None:
+        with tempfile.TemporaryDirectory() as pasta:
+            raiz = Path(pasta)
+            git = raiz / ".git"
+            git.mkdir()
+            (git / "oculto.html").write_text(
+                '<div data-maint-id="ppain9"></div>\n', encoding="utf-8"
+            )
+            (raiz / "visivel.html").write_text(
+                '<div data-maint-id="jmain1"></div>\n', encoding="utf-8"
+            )
+            codigos = [item[0] for item in varrer_codigos.varrer(raiz)]
+            self.assertEqual(codigos, ["jmain1"])
+
+    def test_ignora_link(self) -> None:
+        with tempfile.TemporaryDirectory() as pasta:
+            raiz = Path(pasta)
+            visivel = raiz / "visivel.html"
+            visivel.write_text('<div data-maint-id="jmain1"></div>\n', encoding="utf-8")
+            link = raiz / "atalho.html"
+            try:
+                link.symlink_to(visivel)
+            except OSError:
+                self.skipTest("symlink indisponivel neste sistema")
+            codigos = [item[0] for item in varrer_codigos.varrer(raiz)]
+            self.assertEqual(codigos, ["jmain1"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -25,8 +25,17 @@ O registro é um JSON do projeto, fora do template. Caminho sugerido: `.glpi/man
 python3 scripts/manutencao/varrer_codigos.py .
 python3 scripts/manutencao/validar_registro.py registro-codigos.json --raiz .
 python3 scripts/manutencao/gerar_tabela.py registro-codigos.json --saida tabela-mapeamento.md
+scripts/manutencao/manutencao.sh varrer .
 python3 -m unittest discover -s scripts/manutencao/testes -v
 ```
+
+No Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/manutencao/manutencao.ps1 varrer .
+```
+
+`-ExecutionPolicy Bypass` vale só para esse processo, quando a política local recusa o arquivo. O script procura `python3` e, se faltar, `python`. Sem os dois, a mensagem é: `Python 3 nao encontrado. Instale Python 3 e tente de novo.`
 
 `varrer_codigos.py` lista `data-maint-id` em arquivos de texto. Não entra em `.git` nem segue link.
 

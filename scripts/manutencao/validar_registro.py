@@ -34,9 +34,23 @@ def erros_duplicidade(itens: list[dict]) -> list[str]:
     return erros
 
 
+def erros_caminho(itens: list[dict], raiz: Path) -> list[str]:
+    erros: list[str] = []
+    for item in itens:
+        if item.get("aposentado") is True:
+            continue
+        caminho = item.get("caminho", "")
+        if not isinstance(caminho, str) or caminho == "":
+            continue
+        destino = Path(caminho)
+        if destino.is_absolute() or ".." in destino.parts or not (raiz / destino).is_file():
+            erros.append(f"caminho inexistente: {caminho}")
+    return erros
+
+
 def validar(itens: list[dict], raiz: Path | None = None) -> list[str]:
-    del raiz
-    return erros_regex(itens) + erros_duplicidade(itens)
+    base = raiz if raiz is not None else Path(".")
+    return erros_regex(itens) + erros_duplicidade(itens) + erros_caminho(itens, base)
 
 
 def main(argv: list[str] | None = None) -> int:

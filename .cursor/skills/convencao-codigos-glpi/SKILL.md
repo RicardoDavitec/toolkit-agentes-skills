@@ -87,6 +87,10 @@ O título do chamado de manutenção é `[código] descrição curta`.
 
 O código é o do elemento, na forma do padrão de identificação. A descrição é curta e não repete o código.
 
+## E-mail de notificação
+
+O assunto do e-mail de notificação é o título do chamado. O código entra no assunto, no formato `[código] descrição curta`.
+
 ## Verificação
 
 ```bash

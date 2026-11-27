@@ -4,7 +4,7 @@ tipo: homologacao
 titulo: Replicação do kit na cópia de teste
 codigo: F4.S1
 status: em_revisao
-versao: 0.5.0
+versao: 0.6.0
 data: 2026-11-27
 autor: Ricardo
 classificacao: publico
@@ -30,8 +30,10 @@ classificacao: publico
 | ID | Descrição | Gravidade | Tratamento |
 |---|---|---|---|
 | HML-001-A1 | Novo clone apagaria a cópia já existente | alta | Clone não refeito; remote já estava ausente |
+| HML-001-A2 | Não havia registro, escala nem histórico para comparar | média | A pasta de histórico foi criada vazia e permaneceu vazia |
+| HML-001-A3 | A validação final do upgrade consultou a árvore remota em modo leitura | baixa | Nenhuma escrita no GLPI foi executada |
 
 ## Decisão
-**Resultado:** em andamento
+**Resultado:** aprovado com ressalvas
 
-**Referência do aceite (`accept_ref`):** sessão F4.S1, 27/11/2026
+**Referência do aceite (`accept_ref`):** sessão F4.S1, 27/11/2026. A replicação do kit está registrada. A publicação da versão continua na fase seguinte, com autorização própria.

@@ -3,8 +3,8 @@ id: GUI-016
 tipo: guia
 titulo: Padrão de identificação de elemento
 codigo: F1.S2.P1
-status: rascunho
-versao: 0.3.0
+status: aprovado
+versao: 1.0.0
 data: 2026-11-27
 autor: Ricardo
 classificacao: publico

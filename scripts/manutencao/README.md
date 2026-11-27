@@ -39,4 +39,20 @@ powershell -ExecutionPolicy Bypass -File scripts/manutencao/manutencao.ps1 varre
 
 `varrer_codigos.py` lista `data-maint-id` em arquivos de texto. Não entra em `.git` nem segue link.
 
+## Migração de legado
+
+O template não tem telas. O migrador não inventa código nem lê planilha.
+
+A entrada é um JSON na mesma forma do registro, ou a pasta do projeto se os elementos já tiverem `data-maint-id`. A saída mescla em `.glpi/manutencao/registro-codigos.json`.
+
+- Código que já está no destino permanece, com o caminho que já tinha.
+- Código novo entra só se o formato for válido e o caminho existir, salvo aposentado.
+- Sem `--apply`, o comando só mostra o que mudaria.
+- Escala (`.glpi/manutencao/escala.json`) e histórico (`.glpi/manutencao/historico/`) não são gravados por este comando.
+
+```bash
+python3 scripts/manutencao/migrar_legado.py --origem mapa.json --destino .glpi/manutencao/registro-codigos.json --raiz .
+python3 scripts/manutencao/migrar_legado.py --origem mapa.json --destino .glpi/manutencao/registro-codigos.json --raiz . --apply
+```
+
 `varrer_codigos.py` termina com código 2 se a pasta não existe. `validar_registro.py` termina com código 1 quando há erro e escreve a mensagem na saída de erro. `gerar_tabela.py` só confere se o JSON está bem formado; a checagem de código, duplicidade e caminho fica com `validar_registro.py`, que deve passar antes de publicar a tabela.

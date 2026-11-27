@@ -118,6 +118,11 @@ mkdir -p "$TARGET/.glpi/maps" "$TARGET/.glpi/templates"
 rsync -a "$KIT_ROOT/.glpi/maps/" "$TARGET/.glpi/maps/"
 rsync -a "$KIT_ROOT/.glpi/templates/" "$TARGET/.glpi/templates/"
 
+# Registro, escala e historico do produto. Esta pasta nao e copiada nem apagada.
+if [[ -e "$TARGET/.glpi/manutencao" ]]; then
+  echo "Mantido .glpi/manutencao/ (registro, escala e historico)"
+fi
+
 if [[ ! -f "$TARGET/.glpi/project.yaml" ]]; then
   sed -e "s/meu-produto/${KEY}/g" \
       -e "s/ticket_id: 0/ticket_id: ${TICKET:-0}/g" \
@@ -192,7 +197,9 @@ case "$PROFILE" in
     mkdir -p "$TARGET/docs/05_progresso/geral" "$TARGET/docs/05_progresso/planos_ativos/anexos" \
              "$TARGET/docs/05_progresso/legados" "$TARGET/docs/05_progresso/pendencias" \
              "$TARGET/docs/05_progresso/historico"
-    rsync -a --include='*/' --include='*.example' --include='README.md' --include='FLUXO_COMMIT_CHECKLIST.md' --exclude='*' \
+    rsync -a \
+      --exclude='historico/' \
+      --include='*/' --include='*.example' --include='README.md' --include='FLUXO_COMMIT_CHECKLIST.md' --exclude='*' \
       "$KIT_ROOT/docs/05_progresso/" "$TARGET/docs/05_progresso/"
     if [[ ! -f "$TARGET/docs/05_progresso/geral/PLANO_IMPLEMENTACAO.md" ]]; then
       cp "$KIT_ROOT/docs/05_progresso/geral/PLANO_IMPLEMENTACAO.md.example" \

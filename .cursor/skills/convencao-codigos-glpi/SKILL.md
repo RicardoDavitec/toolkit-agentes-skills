@@ -24,6 +24,7 @@ grava no chamado pai só a tarefa em andamento ou futura, com o código curto.
 4. No GLPI, C e R são ligados por IDs (`tickets_id`, `projects_id`, vínculo `Itil_Project`), nunca por prefixo no texto.
 5. A TicketTask recebe o code curto no texto visível. C e R vão somente via `tickets_id` e `Itil_Project`. É proibido fazer parse do título para extrair C ou R.
 6. O "R" legado do `retro_scan` (`## R1`, `**R1**`, `P7.1`) não é o R de Projeto. Não reinterpretar. Não alargar o `CODE_RE` de `tree_validate.py` para cinco níveis: `F#.S#.P#` já cabe (no máximo dois pontos).
+7. Código de elemento (`data-maint-id`, registro e título de chamado de manutenção) fica nas skills `manutencao-*`. Esta skill continua só com F/S/P. O prefixo `glpi-` não muda.
 
 ## Onde cada nível aparece
 

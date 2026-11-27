@@ -4,7 +4,7 @@ tipo: guia
 titulo: Padrão de identificação de elemento
 codigo: F1.S2.P1
 status: rascunho
-versao: 0.1.0
+versao: 0.2.0
 data: 2026-11-27
 autor: Ricardo
 classificacao: publico
@@ -43,3 +43,6 @@ Não casam com a forma: `pain1` (sem letra de tipo), `eformul1` (cinco letras no
 
 ## Exibição
 O código fica no canto inferior esquerdo do elemento. O checkbox "Exibir código de identificação para manutenção nos elementos do sistema." controla a exibição.
+
+## Aposentadoria
+O código de um elemento aposentado permanece associado a esse elemento. Ele não é atribuído a outro. As mesmas letras e os mesmos dígitos não formam um código novo.

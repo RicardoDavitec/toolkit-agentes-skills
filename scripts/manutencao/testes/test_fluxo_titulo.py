@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
@@ -59,6 +60,19 @@ class TesteTitulo(unittest.TestCase):
             self.assertIsNotNone(codigo)
             encontrado = localizar(raiz, codigo or "")
             self.assertEqual(encontrado, arquivo)
+
+    def test_localizacao_cabe_em_um_minuto(self) -> None:
+        with tempfile.TemporaryDirectory() as pasta:
+            raiz = Path(pasta)
+            (raiz / "painel.html").write_text(
+                '<div data-maint-id="ppain1"></div>\n', encoding="utf-8"
+            )
+            codigo = codigo_do_titulo(TITULO_FICTICIO) or ""
+            inicio = time.perf_counter()
+            encontrado = localizar(raiz, codigo)
+            gasto = time.perf_counter() - inicio
+            self.assertIsNotNone(encontrado)
+            self.assertLess(gasto, 60.0)
 
 
 if __name__ == "__main__":

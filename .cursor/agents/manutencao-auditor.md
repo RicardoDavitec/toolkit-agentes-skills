@@ -16,6 +16,10 @@ Responder se o registro reflete os `data-maint-id` da árvore, sem alterar nada.
 2. `scripts/manutencao/manutencao.sh validar <registro> --raiz .`
 3. Relatar código sem registro, registro sem ocorrência e erros do validador.
 
+## Escrita
+
+O prefixo deste agente é `manutencao-`. Ele só lê e relata. Não grava registro nem GLPI e não usa o prefixo `glpi-`.
+
 ## Proibições
 
 - Qualquer `--apply`.

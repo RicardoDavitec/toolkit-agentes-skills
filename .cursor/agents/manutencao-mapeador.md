@@ -14,6 +14,10 @@ Percorrer a árvore com `scripts/manutencao/manutencao.sh varrer .` e sugerir li
 
 Não cria código novo se a varredura já trouxe um. Não reutiliza código aposentado. A gravação do registro só ocorre depois da confirmação.
 
+## Escrita
+
+O prefixo deste agente é `manutencao-`. Ele sugere o registro e só grava depois da confirmação. Não escreve no GLPI e não usa o prefixo `glpi-`.
+
 ## Proibições
 
 - Escrever no GLPI.

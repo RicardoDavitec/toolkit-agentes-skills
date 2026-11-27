@@ -16,3 +16,7 @@ Receber um código ou uma descrição e devolver o arquivo.
 3. Responda com caminho e linha.
 
 Não altera arquivo, registro, Git nem GLPI.
+
+## Escrita
+
+O prefixo deste agente é `manutencao-`. Ele só lê. Não grava registro nem GLPI e não usa o prefixo `glpi-`.

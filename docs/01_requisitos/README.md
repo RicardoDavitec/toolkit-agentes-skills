@@ -57,4 +57,4 @@ Requisito em rascunho: [req_001_identificacao_de_elemento.md](req_001_identifica
 
 Glossario em rascunho: [glo_001_manutencao_por_codigo.md](glo_001_manutencao_por_codigo.md).
 
-Nenhuma regra de negocio foi emitida. A confirmacao fica em aberto ate o solicitante valida-la.
+Regras de negocio aceitas em 27/11/2026: RN-001 a RN-007, nos arquivos `rn_001` a `rn_007` desta pasta.

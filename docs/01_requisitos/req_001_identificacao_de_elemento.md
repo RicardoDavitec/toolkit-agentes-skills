@@ -3,8 +3,8 @@ id: REQ-001
 tipo: requisito
 titulo: Identificação codificada de elemento
 codigo: F1.S1.P1
-status: rascunho
-versao: 0.1.0
+status: em_revisao
+versao: 0.2.0
 data: 2026-11-27
 autor: Ricardo
 classificacao: publico
@@ -26,6 +26,6 @@ Todo elemento visível da interface tem um código único e estável, exibido no
 - [ ] O repositório público não recebe dado pessoal, segredo nem identificação de cliente
 
 ## Rastreabilidade
-- Regras de negócio: A DEFINIR (confirmação do solicitante pendente em F1.S1.P3; nenhuma RN foi emitida)
+- Regras de negócio: RN-001, RN-002, RN-003, RN-004, RN-005, RN-006, RN-007
 - Tarefas do plano: F1.S1.P1
 - Testes: A DEFINIR

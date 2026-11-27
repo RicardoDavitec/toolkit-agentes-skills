@@ -4,7 +4,7 @@ tipo: teste
 titulo: Scripts de código de elemento
 codigo: F3.S1
 status: em_revisao
-versao: 0.4.0
+versao: 0.5.0
 data: 2026-11-27
 autor: Ricardo
 classificacao: publico
@@ -30,5 +30,5 @@ Teste unitário com `unittest` e teste de preservação em cópia descartável. 
 ## Critérios de saída
 - [x] Linux (WSL) executado em 27/11/2026
 - [x] Windows (PowerShell) executado em 27/11/2026
-- [ ] Falhas corrigidas, ou nenhuma falha na rodada
+- [x] Nenhuma falha na primeira rodada; nenhum script foi alterado
 - [ ] Nova rodada registrada

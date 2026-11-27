@@ -55,4 +55,6 @@ commit). Substitui o `pmf-dev-kit` (API-VScode-GLPI) como fonte.
 
 Requisito em rascunho: [req_001_identificacao_de_elemento.md](req_001_identificacao_de_elemento.md).
 
+Glossario em rascunho: [glo_001_manutencao_por_codigo.md](glo_001_manutencao_por_codigo.md).
+
 Nenhuma regra de negocio foi emitida. A confirmacao fica em aberto ate o solicitante valida-la.
